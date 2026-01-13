@@ -1,0 +1,689 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- This template is for creating an Internet Draft using xml2rfc,
+    which is available here: http://xml.resource.org. -->
+
+<?xml-stylesheet type='text/xsl' href='rfc2629.xslt' ?>
+<?rfc strict="yes" ?>
+<?rfc toc="yes"?>
+<?rfc tocdepth="4"?>
+<?rfc symrefs="yes"?>
+<?rfc sortrefs="yes" ?>
+<?rfc compact="yes" ?>
+<?rfc subcompact="no" ?>
+<rfc xmlns:xi="http://www.w3.org/2001/XInclude" category="std" docName="draft-ietf-lsr-distoptflood-12"
+     ipr="trust200902" obsoletes="" updates="" submissionType="IETF" xml:lang="en"
+     tocInclude="true" tocDepth="3" symRefs="true" sortRefs="true" version="3">
+
+    <!-- ***** FRONT MATTER ***** -->
+
+    <front>
+
+        <title>IS-IS Distributed Flooding Reduction</title>
+
+        <author initials='R.' surname='White' fullname='Russ White'>
+            <organization>Akamai</organization>
+            <address>
+                <email>russ@riw.us</email>
+            </address>
+        </author>
+
+        <author initials='S.' surname='Hegde' fullname='Shraddha Hegde'>
+            <organization>Juniper Networks</organization>
+            <address>
+                <email>shraddha@juniper.net</email>
+            </address>
+        </author>
+
+        <author initials='T.' surname='Przygienda' fullname='Tony Przygienda'>
+            <organization>Juniper Networks</organization>
+            <address>
+                <email>prz@juniper.net</email>
+            </address>
+        </author>
+
+        <author initials='L.' surname='Jalil' fullname='Luay Jalil'>
+            <organization>Verizon</organization>
+            <address>
+                <email>luay.jalil@verizon.com</email>
+            </address>
+        </author>
+
+        <author initials='D.' surname='Voyer' fullname='Daniel Voyer'>
+            <organization>Cisco</organization>
+            <address>
+                <email>?@cisco.com</email>
+            </address>
+
+        </author>
+
+        <date/>
+
+        <abstract>
+            <t>In dense topologies (such as data center fabrics based on the Clos and butterfly though not
+                limited to
+                those; in fact any large topology or one with relatively high degree of connectivity qualifies here)
+                IGP flooding mechanisms designed originally
+                for rather sparse topologies can "overflood", or in other words
+                generate too many identical copies of same information
+                arriving at a given node from other devices. This normally results in longer
+                convergence times and higher resource utilization to process and discard the superfluous copies.
+                Flooding algorithm extensions that restrict the amount of flooding performed can be constructed
+                and can reduce resource utilization significantly, while improving convergence
+                performance.
+                </t>
+            <t>
+                One such flooding modification (based on previous art) optimized for operational considerations,
+                 described further in <xref target="op_considerations"/>,
+                is described in this document.
+            </t>
+
+
+        </abstract>
+
+
+    </front>
+
+    <middle>
+
+        <section title="MANET-Based, Load-Balancing Flooding Extension" toc="default">
+
+            <t>
+                The following section describes a distributed algorithm similar to and based on
+                those implemented in OSPF to support mobile
+                ad-hoc networks,
+                as described in <xref target="RFC5449"/>,<xref target="RFC5614"/>.
+                These solutions
+                have been widely implemented and deployed.
+            </t>
+
+
+            <section title="Empirical Evidence of Correctness and Efficiency Improvement" toc="default">
+
+                <t>Laboratory tests based on a well known open source codebase
+                    show that modifications similar to the algorithm presented here
+                    reduce flooding in a large scale emulated
+                    butterfly network topology significantly.
+                    Under unmodified flooding procedures intermediate systems receive, on average, 40 copies of any changed LSP
+                    fragment in a 2'500 nodes butterfly network.
+                    With the changes described in this document said systems received, on average, two
+                    copies of any changed LSP fragment.
+                    In many cases, only a single copy of each changed LSP was received and processed per node.
+                    In terms of performance, overall convergence times were cut  in roughly half. Other topologies
+                    under experimentation in CLOS networks using another implementation
+                    show similar performance and simulations of the extension
+                    indicate significant reductions in flooding volumes.
+                </t>
+
+                <t>An early version of mechanisms described here has been implemented in the FR Routing open
+                    source routing stack as part of `fabricd` daemon and the described modification has
+                    been implement by commercial
+                    vendors.
+                </t>
+
+            </section> <!--end of experience -->
+
+
+
+
+
+
+
+        <!-- 1 -->
+        <section title="Flooding Modifications" toc="default">
+
+            <t>This section describes detailed modifications to the IS-IS flooding process to reduce
+                the full topology to a dominating connected set of links used for flooding.
+                It does at the same time balance the remaining flooding across all links in the
+                topology to prevent hot-spots.
+            </t>
+
+            <section title="Example Network" toc="default" anchor="example-network">
+
+                <t>Following spine and leaf fabric will be used in further description of
+                    the introduced modifications.</t>
+
+                <figure align="center" anchor="is-model">
+                    <artwork align="left" type="ascii-art"><![CDATA[
++====+ +====+ +====+ +====+ +====+ +====+
+| 1A | | 1B | | 1C | | 1D | | 1E | | 1F | (T0)
++====+ +====+ +====+ +====+ +====+ +====+
+
++====+ +====+ +====+ +====+ +====+ +====+
+| 2A | | 2B | | 2C | | 2D | | 2E | | 2F | (T1)
++====+ +====+ +====+ +====+ +====+ +====+
+
++====+ +====+ +====+ +====+ +====+ +====+
+| 3A | | 3B | | 3C | | 3D | | 3E | | 3F | (T2)
++====+ +====+ +====+ +====+ +====+ +====+
+
++====+ +====+ +====+ +====+ +====+ +====+
+| 4A | | 4B | | 4C | | 4D | | 4E | | 4F | (T1)
++====+ +====+ +====+ +====+ +====+ +====+
+
++====+ +====+ +====+ +====+ +====+ +====+
+| 5A | | 5B | | 5C | | 5D | | 5E | | 5F | (T0)
++====+ +====+ +====+ +====+ +====+ +====+
+]]></artwork>
+                </figure>
+
+                <t>The above picture does not contain the connections between devices for readability purposes.
+                    The reader should assume that each device in a given layer
+                    is connected to every device in
+                    the layer above it in a butterfly network fashion. For instance:
+                </t>
+
+                <ul>
+                    <li>5A is connected to 4A, 4B, 4C, 4D, 4E, and 4F</li>
+                    <li>5B is connected to 4A, 4B, 4C, 4D, 4E, and 4F</li>
+                    <li>4A is connected to 3A, 3B, 3C, 3D, 3E, 3F, 5A, 5B, 5C, 5D, 5E, and 5F</li>
+                    <li>4B is connected to 3A, 3B, 3C, 3D, 3E, 3F, 5A, 5B, 5C, 5D, 5E, and 5F</li>
+                    <li>etc.</li>
+                </ul>
+
+                <t>The tiers or stages of the fabric are marked for easier reference.
+                    Alternate representation of this topology is a "folded Clos" with T2 being the
+                    "top of the fabric" and T0 representing the leaves.
+                </t>
+
+            </section>
+
+            <!-- 2 -->
+            <section title="Optimizing Flooding" toc="default">
+
+                <t>The simplest way to conceive of the solution presented here is in two stages:</t>
+
+                    <ul spacing="normal">
+                        <li><t>Stage 1: Forward Optimization</t>
+                                <ul spacing="normal" >
+                                    <li>Find the group of intermediate systems that will all flood to the same set of
+                                        neighbors as the local IS
+                                    </li>
+                                    <li>Decide (deterministically) which subset of the intermediate systems within
+                                        this group
+                                        should re-flood any received LSPs
+                                    </li>
+                                </ul>
+
+                        </li>
+                        <li><t>Stage 2: Reverse Optimization</t>
+
+                                <ul>
+                                    <li>Find neighbors on the shortest path towards the origin of the change</li>
+                                    <li>Do not flood towards these neighbors</li>
+                                </ul>
+
+                        </li>
+                    </ul>
+
+                <t>The first stage is best explained through an illustration. In the network above, if 5A transmits a
+                    modified Link State Protocol Data Unit (LSP) to 4A-4F, each of 4A-4F nodes will, in turn, flood this
+                    modified LSP to 3A (for instance). With this, 3A will receive 6 copies of the modified LSP,
+                    while only one copy
+                    is necessary for the intermediate systems shown to converge on the same view of the topology. If
+                    4A-4F could determine that all of them will all flood identical copies of the modified LSP to 3A,
+                    it would be possible
+                    for all of them except one to decide not to flood the changed LSP to 3A.
+                </t>
+
+                <t>The technique used in this draft to determine such flooding group is for each intermediate system to
+                    calculate
+                    a special SPT (shortest-path spanning tree) from the point of view of the transmitting neighbor.
+                    As next step, by
+                    setting the metric of all links to 1 and truncating the SPT
+                    to two hops, the local IS can find the
+                    group of neighbors it will flood any changed LSP towards and the set of intermediate systems (not
+                    necessarily neighbors) which will also flood to this same set of neighbors. If every intermediate
+                    system in the flooding set performs this same calculation, they will all obtain the same flooding
+                    group.
+                </t>
+
+                <t>Once such a flooding group is determined, the members of the flooding group will each (independently)
+                    choose which of the members should re-flood the received information. A
+                    common hash function is used across a set
+                    of shared
+                    variables so each member of the group comes to the same conclusion as to the designated flooding
+                    nodes.
+                    The group member which is in such a way `selected` to flood the changed LSP does so normally;
+                    the remaining group
+                    members suppress the flooding of the LSP initially.
+                </t>
+
+                <t>
+                    Each IS calculates
+                    the special, truncated SPT separately, and determines which IS should flood any changed LSPs
+                    independently based on a common
+                    hash function.
+                    Because these calculations are performed using both a view of the network shared by all nodes
+                    (based on the common link state database) and additionally a common hash function, each member of
+                    the flooding
+                    group will make the same decision under converged conditions. In the transitory state of nodes
+                    having potentially different view of topologies the flooding may either overflood or in worse case
+                    not flood enough for which we introduce a 'quick-patching' mechanism later but ultimately will
+                    converge due to periodic CSNP origination per normal protocol operation.
+                </t>
+
+                <t>The second stage is simpler, consisting of a single rule: do not flood modified LSPs along any of the
+                    shortest paths towards the origin of the modified LSP. This rule relies on the observation that any
+                    IS between the origin of the modified LSP and the local IS should receive the modified LSP from some
+                    other IS closer to the source of the modified LSP. It is worth to observe that
+                    if all the nodes that should be designated
+                    to flood within a peer group are pruned by the second stage the receiving node is at the `tail-end`
+                    of the flooding chain and no further flooding will be necessary. Also, per normal protocol
+                    procedures flooding to the node from which the LSP has been received will not be performed.
+                </t>
+
+            </section> <!-- end of optimized flooding -->
+
+            <!-- 2 -->
+            <section title="Optimization Process Details" toc="default">
+
+                <t>
+                    This section provides normative description of the specification. Any node implementing
+                    this solution MUST exhibit external behavior that conforms to the algorithms provided.
+                </t>
+                <t>Each intermediate system will determine whether it should re-flood LSPs as described below.
+                    When a modified LSP arrives from a Transmitting Neighbor (TN), the result of the following
+                    algorithm obtains the necessary decision:
+                </t>
+
+                <t>Step 1: Build the Two-Hop List (THL) and Remote Neighbor's List (RNL) of nodes:</t>
+
+                    <ol spacing="normal" type="%C)">
+                        <li> Set all link metrics to 1</li>
+                        <li> Calculate an SPT truncated to 2 hops from the perspective of TN. The calculation
+                        MUST consider any adjacency to a neighbor via a P-Node as a single hop and hence
+                            not include P-Nodes on THL or RNL. Usual bidirectional checks MUST be performed
+                        during the construction of SPT. Links in all topologies per <xref target="RFC5120"/> MUST
+                        be used in the SPT construction. Overload condition of nodes MUST be ignored
+                            during the calculation. </li>
+                        <li>
+                            <t>
+                            For each IS that is two hops away (has a metric of 2 in the truncated SPT) from TN:
+                            </t>
+                            <ol spacing="normal" type="%i.">
+                                <li>If the IS is the LSP originator, skip</li>
+                                <li>If the IS is a neighbor of the LSP originator, skip</li>
+                                <li>If the IS is on the shortest path from the TN towards the originator of the modified LSP, skip
+                                </li>
+                                <li>If the IS is *not* on the shortest path from the TN towards the originator of the modified LSP, add
+                                    it to THL
+                                </li>
+                            </ol>
+                        </li>
+
+                        <li>Add each IS that is one hop away from TN to the RNL</li>
+                    </ol>
+
+                <t>Step 2: Sort nodes in RNL by system IDs, from the least value to the greatest comparing
+                    the node IDs byte wise starting with the "most significant" or "left" byte.</t>
+
+
+
+                <t>Step 3: Shift the fragment number of the received LSP fragment down by 3 bits.
+                    The shifting of
+                    the fragment number in the hashes will put 8 sequent fragments onto the same flooding
+                    subgraph to minimize re-ordering.  Use fletcher 16 checksum over the shifted ID to calculate
+                    a number H. The variant used is the common simplified version replacing modulo operation with a
+                    shift. Several reference checksum are provided in <xref target="refcsum"/>.
+</t>
+
+
+                <figure align="left" alt="" height="" suppress-title="false" title="Reference Checksums" width="" anchor="refcsum">
+
+                <artwork align="left" alt="" height="" name="" type="" width="" xml:space="preserve">
+<![CDATA[
+0102.0304.0506.00.00 checksum: $6215 mod%(2,3,4,5,6) 01,02,01,04,05
+0102.0304.0506.00.07 checksum: $6215 mod%(2,3,4,5,6) 01,02,01,04,05
+0102.0304.0506.00.0F checksum: $6316 mod%(2,3,4,5,6) 00,01,02,01,04
+0001.0203.0405.00.01 checksum: $410F mod%(2,3,4,5,6) 01,02,03,00,05
+
+                      ]]>
+    </artwork>
+                </figure>
+
+
+                <t>
+                    RNum is the number of nodes in the RNL.  Consequently, set N to the H
+                    MOD of RNum (N=H MOD RNum).  With that N will be less than the number
+                    of members of RNL.  (footnote 1: this allows for some balancing of
+                    LSPs coming from same system ID).
+
+                </t>
+
+                <t>Step 4: Starting with the Nth member of RNL:
+                    where N is the index into the members in RNL,
+                    with index starting from zero (index value zero is assigned to the IS with lowest system-id): </t>
+
+
+                    <ol spacing="normal" type="%C)">
+                        <li>If THL is empty or the walk wrapped around, finish the algorithm</li>
+                        <li>If this member of RNL is the local calculating IS, it MUST re-flood the modified LSP
+                            to at least the remaining members in the THL it is adjacent to; finish the algorithm
+                        </li>
+                        <li>
+                            If this member of the RNL signals capability to run or is running
+                            another flood reduction extension move to the next member of RNL
+                        </li>
+                        <li>Remove all members of THL connected to (adjacent to) this member of RNL</li>
+                        <li>Move to the next member of RNL, wrapping to the beginning of RNL if necessary</li>
+                    </ol>
+
+                <!--
+                <t>
+                    Step 5:
+                    include yourself as re-flooder for LSPs arriving from all TNs signalling capability to or running
+                    another
+                    flood reduction extension or running different version of this extension
+                </t>
+                -->
+
+                <t>This description is leaning towards clarity rather than optimal performance when
+                    implemented.</t>
+
+
+
+            </section> <!-- end of optimization process -->
+
+
+
+            <!-- 2 -->
+            <section title="Flooding Failures" toc="default">
+
+                <t>It is possible that during initial convergence or
+                    in some failure modes the flooding will be incomplete due to the
+                    optimizations outlined.
+                    Specifically, if a re-flooder fails, or is somehow disconnected from all the links across which it
+                    should be re-flooding,
+                    an LSP could be only partially distributed through the topology. To speed up convergence
+                    under such partition
+                    failures (observe that periodic CSNPs will under any circumstances converge the topology though
+                    at a slower pace),
+                    an intermediate system which
+                    does not re-flood a specific LSP (or fragment) SHOULD:
+                </t>
+                
+                    <ol spacing="normal" type="%C)">
+                        <li>Set a short, configurable timer which should be significantly shorter than CSNP interval used.</li>
+                        <li>When the timer expires, send Partial Sequence Number Packet (PSNP) of all LSPs that have *not*
+                            been re-flooded during the timer runtime to all neighbors unless an up-to-date PSNP or
+                            CSNP has been already received from the neighbor.
+                        </li>
+                        <li>Per normal protocol procedures process any Partial Sequence Number Packets (PSNPs)
+                            received that indicate that neighbors
+                            still have older versions of the LSP will lead to the usual
+                            synchronization of the databases that are out of sync due to optimized flooding.
+                        </li>
+                    </ol>
+
+                <t>
+                    During processing of received CSNPs or PSNPs indicating requests for a newer version the resulting
+                    flooding MUST NOT try to use optimized flooding distribution.
+                </t>
+
+                <t> If any such re-synchronizations above a configurable threshold is required (i.e. PSNPs
+                            are sent to the neighbors and are answered with requests or CSNPs are indicating significant
+                            misses of distributed LSPs),
+                            an implementation SHOULD notify the network operator via the according mechanism
+                            about the condition.
+                </t>
+
+
+            </section> <!-- end of flooding failures -->
+
+            <section title="Deployment Considerations" toc="default">
+                <t>
+                    A node deploying this algorithm on point-to-point links MUST send CSNPs on such links. This does not
+                    represent a dramatic change given most deployed implementations today already exhibit this
+                    behavior to prevent possible slow synchronization of IS-IS database across such links and to provide
+                    additional periodic consistency guarantees.
+                </t>
+            </section>
+            <!-- 2 -->
+
+
+            <!-- 2 -->
+            <section title="Implementation Considerations" toc="default">
+
+                <t>The calculations described here seem complex, which might lead the reader to conclude that the cost of
+                    calculation is so much higher than the cost of flooding that this optimization is
+                    counter-productive.
+                    First, The description provided here is designed for clarity rather than optimal calculation.
+                    Second, many of the involved calculations can be easily performed in advance and stored,
+                    rather than being performed for
+                    each
+                    LSP occurrence and each neighbor. Optimized versions of the process described here have
+                    been implemented,
+                    and do result in strong convergence speed gains.
+                </t>
+
+                <t>
+                    Further, a node that decides that the calculations involved may generate an excessive
+                    burden during massive topology fluctuations events, and may negatively affect overall protocol
+                    behavior, can decide to not apply reduction rules temporarily for any set of LSPs and fully flood those
+                    until the conditions abate.
+                </t>
+
+                <t>
+                    An implementation in a node MAY choose independently of others
+                    to provide a configurable parameter to allow for more than
+                    one node in RNL to re-flood, e.g. it may re-flood even if it's only the member that would
+                    be chosen from
+                    the RNL if a double coverage of THL is required. The modifications to the algorithm
+                    are simple enough to not require further text.
+                </t>
+
+                <t>
+                    An implementation should pay particular attention that the case of a stale LSP with a higher
+                    version that persists in the network still works correctly in case the originator reboots and
+                    starts with lower version. Though the flooding of an LSP back to originator is suppressed
+                    by this extension the normal PSNP and CSNP procedures should trigger re-origination by
+                    the source of a higher version correctly.
+                </t>
+
+            </section> <!-- end of performance note -->
+
+        </section> <!-- end of optimizing flooding -->
+
+        </section>
+
+
+        <section title="Operational Considerations" anchor="op_considerations">
+            <t>
+                The extension introduced to flooding  in this document exhibits many desirable properties
+                important for large production IS-IS networks.
+
+                <!--
+                The critical function of the IGP makes their
+                flag day migration close to impossible and any significant outage, i.e. non-negligible
+                blast radius, introduces a significant operational risk to any service relying on the
+                relevant IGP backbone. Such outages are caused often by
+                configuration changes or
+                issuance of unintended commands, especially since those networks tend to be deployed
+                for tens of years under changing personnel and varying degree of competence. Moreover,
+                due to geographic and co-location realities in many cases the network topology changes
+                its properties and solution that is resilient to such properties presents a lower risk than
+                one that can misfunction on node failures in certain topological configurations.
+                Obviously it is desirable to detect easily which nodes are using the feature and
+                allow for simple fixing of defects without disturbing the topology significantly.
+
+
+                -->
+            </t>
+
+            <t>
+                This extension is designed to be deployable without
+            initial configuration and <!-- , allows node by node introduction and removal of the feature into the network, -->
+            balances the reduced flooding not only on a single or few trees but uses the
+            information about the origin of the fragment to spread the load across whole topology.
+
+                <!-- All of
+            those properties are guaranteed to work while asserting
+             minimal blast radius on introduction of the feature and also
+                changes of any node or link. Deployment of this extension presents the same risk
+                no matter the specific properties of the underlying topology.
+                -->
+
+            </t>
+
+            <!--
+            <t>To simplify deployment and make the feature detectable on nodes deploying it
+                a node <em>running</em> the algorithm SHOULD advertise a
+                Sub-TLV of the IS-IS Router Capability TLV-242 carrying the currently
+                active version of the algorithm.
+                </t>
+
+                <figure align="left">
+                    <artwork align="left" type="ascii-art"><![CDATA[
+   0                   1                   2                   3
+   0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+  |     Type      |     Length    |    Version      |
+  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+  ]]></artwork>
+                </figure>
+
+                <ul>
+                    <li>Type: TBD1</li>
+
+                    <li>Length: 1</li>
+
+
+                    <li>Version: version of the algorithm active on the node.</li>
+                </ul>
+
+            <t>
+                A change to the extension presented in this document that does not
+                guarantee backwards compatibility and advertises this sub-TLV MUST
+                reserve and use a new version number.
+            </t>
+            -->
+
+        </section>
+
+        <!-- 1 -->
+        <section title="Security Considerations" toc="default">
+
+            <t>This document outlines flooding algorithm modification to the IS-IS protocol for operation most useful
+                 at large scale or in high density network
+                topologies. The extension does not present any new attack vectors even if nodes start to
+                advertise a byzantine attack of signalling that they run the extension while still
+                following standard behavior.
+                As always, ISIS implementations SHOULD implement IS-IS cryptographic authentication, as described in <xref
+                        target="RFC5304"/>, and should enable other security measures in accordance to best common
+                practices for the IS-IS protocol.
+            </t>
+
+        </section> <!-- end of security considerations -->
+
+
+
+        <section anchor="IGP_IANA" title="IANA Section">
+            <t>IANA is requested to allocate a TBD value in 1-127 range with description of "Modified MANET Reduction" further referring to
+                this document as specification in the "IGP Algorithm Type For Computing Flooding Topology" registry.
+
+            </t>
+
+
+            <!--
+            <t>IANA is requested to set up a registry called "IGP MANET Flooding Extension Version" under the existing "Interior Gateway
+                Protocol (IGP) Parameters" IANA registry.</t>
+
+            <t>Values in this registry come from the range 0 .. 255.</t>
+
+            <t>
+                The following values are defined:</t>
+            <ul>
+
+                <li>
+                    0-255: Reserved with values representing version of this extension.
+                </li>
+
+            </ul>
+
+        -->
+        </section>
+
+
+        <!-- 2 -->
+        <section title="Contributors" toc="default">
+
+            <t>The following people have contributed to this draft or provided valuable comments
+                and are mentioned without any particular
+                order: Abhishek Kumar, Nikos Triantafillis, Ivan
+                Pepelnjak, Christian Franke, Hannes Gredler, Les Ginsberg, Naiming Shen, Uma Chunduri, Nick Russo,
+                Tony Li, Acee Lindem, Renato Westphal
+                and Rodny Molina.
+            </t>
+
+        </section> <!-- end of contributors -->
+
+
+
+    </middle>
+
+    <back>
+
+
+        <references title="Normative References">
+
+
+            <!--
+
+            <xi:include href='https://xml2rfc.tools.ietf.org/public/rfc/bibxml/reference.RFC.7981.xml'/>
+
+            <reference anchor="ISO10589">
+                <front>
+                    <title>Intermediate system to Intermediate system intra-domain
+                        routeing information exchange protocol for use in conjunction with
+                        the protocol for providing the connectionless-mode Network Service
+                        (ISO 8473)
+                    </title>
+
+                    <author>
+                        <organization abbrev="ISO">International Organization for Standardization</organization>
+                    </author>
+
+                    <date month="Nov" year="2002"/>
+                </front>
+
+                <seriesInfo name="ISO/IEC" value="10589:2002, Second Edition"/>
+            </reference>
+            -->
+
+        </references> <!-- end of normative references -->
+
+        <references title="Informative References">
+            <xi:include href='https://xml2rfc.tools.ietf.org/public/rfc/bibxml/reference.RFC.5304.xml'/>
+            <xi:include href='https://xml2rfc.tools.ietf.org/public/rfc/bibxml/reference.RFC.5120.xml'/>
+            <xi:include href='https://xml2rfc.tools.ietf.org/public/rfc/bibxml/reference.RFC.5449.xml'/>
+            <xi:include href='https://xml2rfc.tools.ietf.org/public/rfc/bibxml/reference.RFC.5614.xml'/>
+            <xi:include href='https://xml2rfc.tools.ietf.org/public/rfc/bibxml/reference.RFC.8126.xml'/>
+
+        </references> <!-- end of informative references -->
+
+        <section title="Flooding Example" toc="default">
+
+            <t>Assume, in the network specified in example given in <xref target="example-network"/>, that 5A floods some modified LSP towards 4A-4F and
+                we only use a single node to re-flood.
+                To determine whether 4A
+                should flood this LSP to 3A-3F:
+            </t>
+
+            <ul >
+                <li>5A is TN; 4A calculates a truncated SPT from 5A's perspective with all link metrics set to
+                    1
+                </li>
+                <li>4A builds THL, which contains 3A, 3B, 3C, 3D, 3E, 3F, 5B, 5C, 5D, 5E and 5F</li>
+                <li>4A builds RNL, which contains 4A,4B,4C,4D,4E and 4F, sorting it by the system ID</li>
+                <li>4A computes hash on the received LSP-ID to get N; assume N is 1 in this case</li>
+                <li>Since 4A is the 1st member of RNL and there are members in THL, 4A must re-flood; the loop
+                    exits
+                </li>
+            </ul>
+
+        </section> <!-- end of flooding example -->
+
+
+    </back>
+
+</rfc>

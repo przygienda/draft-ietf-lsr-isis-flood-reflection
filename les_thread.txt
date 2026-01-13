@@ -1,0 +1,605 @@
+Draft authors -
+
+The WG adoption call reminded me that I had some questions following the presentation of this draft at IETF 114 which we
+decided to "take to the list" - but we/I never did.
+Looking at the minutes, there was this exchange:
+
+<snip>
+Les:           I'm not convinced that you don't need to advertise
+               whether a node needs support this. If not, why not define
+               this as an algorithm and use the dynamic flooding?
+Tony P:        First bring me a case why we need to signal this.
+Les:           If I'm not going to flood and I'm expecting someone else
+               to flood, and I don't know whether we're in sync.
+Tony:          Think it through, the mix with old nodes just fine. The
+               old guy still do the full flooding and that's fine.
+Les:           You use the term up-to-date PSNP, I have no idea how you
+               determine whether the PSNP is "up-to-date"? unlike CSNP,
+               PSNP doesn't have the info.
+Tony:          You have to list all those things.
+Les:           Let's take it to the list.
+<end snip>
+
+Question #1: Why not define this as an algorithm and use draft-ietf-lsr-dynamic-flooding (in distributed mode)?
+This question is of significance both from a correctness standpoint and what track (Informational or Standard) the draft should target.
+
+Tony P's reply above suggests this isn't needed - but I don't think this is true. The draft itself says in Section 2.1:
+
+<snip>
+Once this flooding group is determined, the members of the flooding
+   group will each (independently) choose which of the members should
+   re-flood the received information.  Each member of the flooding group
+   calculates this independently of all the other members, but a common
+   hash MUST be used across a set of shared variables so each member of
+   the group comes to the same conclusion.
+<end snip>
+
+If a "common hash MUST be used across a set of shared variables" (and I agree that it MUST) then all nodes which
+support the optimization MUST agree to use the same algorithm. Given that there are likely many hash
+algorithms which could be used, some way to signal the algorithm in use seems to be required.
+By publishing a given algorithm(including the hash) and having it assigned an identifier in the registry
+defined in https://www.ietf.org/archive/id/draft-ietf-lsr-dynamic-flooding-11.html#section-7.3 - and using the
+Area Leader logic defined in the same draft, consistency is achieved.
+Without that, I don't think this is guaranteed to work.
+
+Note the issue here has nothing to do with legacy nodes - I agree with Tony P's comment above that legacy nodes do
+not present a problem - they just limit the benefits.
+
+Question #2: Please define and demonstrate how "up-to-date PSNPs" work to recover from flooding failures.
+
+We know that periodic CSNPs robustly address this issue - and their use has been recommended for flooding
+reduction solutions over the years.
+Please more completely define "up-to-date PSNPs" and spend some time demonstrating how they are guaranteed
+to work - and consider in that discussion that transmission of SNPs of either type is not 100% reliable.
+
+Thanx.
+
+    Les
+
+_______________________________________________
+Lsr mailing list
+Lsr@ietf.org
+https://www.ietf.org/mailman/listinfo/lsr
+
+Tony Przygienda <tonysietf@gmail.com>
+
+Nov 25, 2022, 10:05 AM
+
+to Les, draft-white-lsr-distoptflood.authors@ietf.org, lsr@ietf.org
+
+Les, bits delay since I had to think a bits about your comment to do it justice and it's bit long'ish
+
+1. So, to start with a cut and dry summary and reasoning for it, I am firmly against adding signaling to the whole
+thing by some means (or rather any procedures to act upon distribution of info about the algorithm used by any of
+the nodes involved, i.e. I'm ok with having the algorithm advertised solely for info purposes with me though
+I don't see what function it serves except detecting nodes that do not reduce yet in transition of a network or maybe,
+as you say, detect algorithm mismatch). More detailed reasoning follows:
+
+a. First reason is the fact that the additional flexibility of maybe having one day some better hash algorithm
+    will add very serious amount of complexity in implementation/behavior in case we are talking about adding
+    it to the centralized variant of the dynamic flooding draft and having a leader advertising the algorithm.
+    i. backup machinery needs to be added/spec'ed properly. What does the network do if backup has different algorithm
+        than the current leader? First we would have a transition phase, some nodes have old algorithm, some the old,
+        network may stop converging for a bit that way, worst case we partition the PGL algorithm advertisement from
+        new nodes so we have to wait CSNP * diameter etc. Big network bleep is the result. I know there is lots
+        verbiage in the dynamic flooding draft but I know the reality of implementations of such things and
+        they are extraordinarily high for the bit flexibility the whole thing would buy us I see you suggesting.
+   ii. What happens if PGL doesn't say anything? Default algorithm? Full flooding again? in case of
+        full-flooding-regression all of a sudden one fat finger on PGL (or PGL moving unexpectedly due to fat
+        finger/some other node config changes) can basically crash your network and worst case stop convergence
+        if reduction allowed before to converge but full flooding seriously slows down everything. I know,
+        this would be a network tethering on the edge already but why have additional daemons hiding in a single
+        point of failure on top.
+  iii. lots of remaining subtle things. e.g. to make sure the whole thing works each node havs to compute
+        reachability to the leader (not sure that's in the dynamic flooding draft now), otherwise they may
+        use stable LSPs from a leader that is gone/partitioned. This reachability computation will have adverse
+        effects. The timing is unpredictable in the network and may lead to problems mentioned in i).
+        If nodes don't do the reachability we may end up in Paxos unintentionally BTW.
+
+Generally, I can claim that I lived the PGL in ATM so I've seen the "central leader in IGP" game. Not excited about
+it from experience and it was much easier in ATM already due to hard state of SVCs. To sum it up again, I see here
+a suggestion to add massive amount of complexity/fragility for an assumed, unspecified benefit in the future.
+As footnote: centralization in an IGP a cardinal sin in my eyes moving away from the first premise that made
+             distributed routing so successful. I spoke against it and still hold the same opinion and if
+             that's heresy I'm more than happy to be bumped off the author's list of the dynamic-flooding draft ;-).
+
+so maybe as iv) here:  WHAT additional variables in the hash do you imagine would constitute a
+_better_ algorithm? AFAIS there are none I can imagine and the current algorithm provides pretty much best
+entropy with clearly cap'ed state per node needed to balance per LSP originator/fragment. So instead of
+"pledging for flexibility for flexibilitity's sake" I'd rather see you suggesting something that would
+change/improve the behavior in the future/now in concrete terms and then let's talk about specifics.
+
+b. Then, as second reason when talking towards a distributed solution, i.e. each node flooding the algorithm it uses.
+    We still do NOT know what to do in case nodes will advertise different algorithms each, no matter it's advertised
+    or not. Shut down the network, fall back to full flooding if one node disagrees (which makes every node a
+    potential attack vector)? We had that kind of discussion before, last on multi-TLV where you were insisting on
+    killing the cap indication so it would be funny to add it here.  Complexity without any concrete benefit
+    whatsoever AFAIS and lots of ratholes again.
+
+2. To go to your reliable PSNP/CSNP objection now. First, they were never reliable. Neither were LSPs. We can make a
+    very fine argument that if PSNPs/CSNPs are not reliable then ISIS will not converge at all. We can start to argue
+    then how many we lose and when and how one variation of flooding is "more robust" than other and we can actually
+    discover that if the redundancy factor in graph is higher than the largest fanout than we are in normal ISIS and
+    hence the reduced flooding redundancy factor (in extreme case it's basically infinity for existent flooding
+    algorithm in ISIS) + PSNP unreliability are two variables (plus network radius + origination rates + etc) which
+    in extreme case can be shown to not converge the network anymore no matter the flooding (e.g. if the
+    re-origination rate + radius is higher than the propagation time under CSNP/PSNP losses).  In short,
+    the objection brings nothing new to the table, Les, this has been around forever and we're talking here
+    about the fact that any flooding reduction makes flooding "less" reliable somewhat. That's trivia.
+
+b. to more productive arguments: the solution does NOT reduce the full CSNP advertisement and this will fix any
+    bug in an algorithm. We agree that far I think.
+
+3. Then, let's have the up-to-date PSNP in glossary with a better name, e.g. "consistency assuring PSNP" or
+    CA-PSNP which describes better what it is. It cannot hurt
+
+It goes like this (which I thought was already decently clear in the draft but nothing wrong in spelling that out)
+
+a) the algorithm figures out during computation that LSP-ID X/fragment Y is NOT flooded on since other RNL members
+    took over. Now, the according LSP-ID X/fragment Y is put on PSNP queue of all the members in TN that are
+    your neighbors (optimization here) or as the draft says "all your neighbors" which is bits too conservative.
+    Flood out those PSNPs on a second timer unless they were killed during normal ISIS processing rules or
+    already went out.  Observe that NO changes are made to normal ISIS CSNP/LSP/PSNP processing here except dropping
+    those PSNPs into the according queues to go out. If the neighbor gets the PSNP and interprets it as something
+    newer, normal procedures kick in. If it already has it nothing will happen really per normal procedures.
+    If your implementation is very conservative you can choose yourself super conservative constants, e.g. unless
+    you see tripple coverage by other RNLs you flood nevertheless. Or if it turns out you send PSNPs to your
+    neighbors in expectation that they covered the TNLs and you get requests back, either the other TNLs are
+    dead slow or something is off and an alarm can be given as in "flooding reduction here struggles". Nothing to
+    do with this solution, this will happen on any type of flood reduction, chokepoints may get created (and observe
+    that this draft load balances flooding and not only reduces, one of the lessons I learned implementing
+    those things in my earlier lives ;-)
+
+So, to sum up the argument chain, I err on the side of simplicity here since from experience, simplicity
+    allows us to deploy and stand straight-faced in front of customers with very large, dense networks. This draft
+    is something  that consists of 12 pages including examples and about 4-5 pages boilerplate. And on top bases
+    on old clean work and pretty much e'thing in it proven by implementation and previous art IME. This vs.
+    an adopted design-by-comittee draft of 46 pages that at this point in time I think does not standardize
+    any interoperability but standardizes how to find out why things don't interoperate due to all possible
+    combinations of centralized vs. distributed plus bring your own algorithm on top by every vendor (based on
+    my last read of it) ...
+
+-- tony
+
+
+
+
+
+Les Ginsberg (ginsberg) <ginsberg@cisco.com>
+
+Nov 28, 2022, 9:39 AM
+
+to me, draft-white-lsr-distoptflood.authors@ietf.org, lsr@ietf.org
+
+Tony –
+
+
+
+In the interest of brevity, I am not going to respond in detail to each of your points. My reply focuses on two things.
+
+
+
+1)You can successfully deploy this algorithm in the presence of nodes which do NOT support this algorithm. But you
+    cannot successfully deploy this algorithm in the presence of nodes which enable a different flooding reduction
+    algorithm.
+
+Given that this is not the only flooding reduction algorithm which has already been proposed – nor is it likely
+the last one to be proposed – it would seem advantageous and prudent to provide a means for nodes to
+know what algorithm is in use and ensure that multiple algorithms are not enabled simultaneously – which is
+what draft-ietf-lsr-dynamic-flooding provides. You seem to be saying
+“this is the only flooding reduction algorithm we need” and you are not interested in allowing deployment
+of anything else – now or in the future. This lessens my enthusiasm for this draft.
+
+
+
+The mechanisms proposed in draft-ietf-lsr-dynamic-flooding are analogous to what is used for DIS election
+and (more recently) for selecting the winning FAD for a given flex-algo. Given the significant deployment
+of flex-algo and the long history of DIS election, I am surprised at the degree of concern you have for
+the use of these mechanisms.
+
+
+
+2)Regarding the use of PSNPs…you propose to send a PSNP (once apparently) which has the LSP entries for all the
+    LSPs which you chose NOT to flood to a given node (minus any LSPs for which you may have received an explicit ack)
+    in the most recent time interval - suggested to be one second.
+
+What will happen when you send this? Let’s use a simple example where one LSP was selectively flooded – call it A.00-01(Seq #100).
+
+NOTE: This example assumes a P2P circuit.
+
+
+
+a)Neighbor receives the PSNP, already has A.00-01(Seq #100) in its LSPDB – no action taken. All is good.
+
+b)Neighbor receives the PSNP, does not have A.00-1(Seq #100) in its LSPDB – sends a PSNP back to the originator requesting that the LSP be flooded. At this point I assume normal flooding procedures apply i.e., SRM flag is set, causing the LSP to be flooded, and I assume SRM remains set until the LSP is acknowledged.
+
+All is good – but the additional flooding is likely to be redundant as the node which had the responsibility for sending this LSP to your neighbor should be doing so reliably.
+
+c)Neighbor does not receive the PSNP. If the neighbor does not have A.00-01(Seq #100) in its database, the one time sending of the special PSNP won’t trigger sending of the missing LSP. As the draft does not propose that the special PSNP be resent, I assume during the next time interval the only LSP entries that would be sent in the next special PSNP would be other LSPs that were partially flooded in the subsequent interval – not A.00-01.
+
+
+
+Periodic CSNPs can be dropped as well, but as periodic CSNPs are guaranteed to be sent continuously at some interval
+and they cover the entire LSPDB, reliability of the Update process is assured. Under some pathological conditions
+it might take a significant amount of time to converge, but it is assured.
+
+
+
+What then do these special PSNPs provide? It could be argued that they provide a lower cost and more targeted
+recovery mechanism in some circumstances – and that using them in conjunction with periodic CSNPs may speed
+convergence. However, I think the existing proposal discussed in Section 2.3 of the draft lacks detail
+and is unlikely to achieve this goal in most circumstances.
+
+
+
+The time period of 1 second is too aggressive. You may end up sending the special PSNP before the node
+which has the responsibility for flooding the LSP to your neighbor has even had a chance to do the flooding –
+which will undermine the benefits of the flooding reduction.
+
+
+
+If you consider the cost of sending/receiving a PSNP is roughly equivalent to the cost of sending/receiving an LSP,
+you will have created the equivalent of full mesh flooding every second since every node can expect to receive a PSNP
+from every neighbor whenever an LSP update is triggered. NOTE: The relative impact will be more noticeable when a
+small # of LSPs are updated.
+
+
+
+And since the node which is responsible for flooding to a particular neighbor should be doing so
+reliably, under most circumstances the special PSNP is not needed at all – so why
+choose an aggressive time interval for sending it?
+
+
+
+Periodic CSNPs are sufficient – are typically done at a slow rate (10s of seconds) – and
+apparently (from your response below) you seem to intend to send periodic CSNPs also (though the draft
+does not mention this). I am not seeing the benefit of the special PSNP – but if you are committed to this,
+please provide a more robust description of how they should be used in the draft and an analysis of the
+benefits under some realistic flooding scenarios.
+
+
+
+   Les
+russ@riw.us <russ@riw.us>
+
+Nov 28, 2022, 1:55 PM
+
+to Les, me, draft-white-lsr-distoptflood.authors@ietf.org, lsr@ietf.org
+
+>1)You can successfully deploy this algorithm in the presence of nodes
+>which do NOT support this algorithm. But you cannot successfully deploy
+>this algorithm in the presence of nodes which enable a different
+>flooding reduction algorithm.
+
+This is correct. There seem to be two sides to this situation, however.
+Some operators will likely not want to deploy
+draft-ietf-lsr-dynamic-flooding to deploy flooding reduction because it
+is "something else to break," or it interferes in some way with
+incremental deployment. I'm sympathetic to this point of view, so I'm a
+little skittish about making the signaling in dynamic-flooding a
+MUST--but I'm perfectly happy to make it a MAY, or perhaps a SHOULD, if
+folks think that is useful.
+
+>2)Regarding the use of PSNPs…you propose to send a PSNP (once
+>apparently) which has the LSP entries for all the LSPs which you chose
+>NOT to flood to a given node (minus any LSPs for which you may have
+>received an explicit ack) in the most recent time interval - suggested
+>to be one second.
+Correct. This was intended as a compromise towards initial criticisms of
+the mechanism that "flooding could fail, so there needs to be some way
+to ensure no-one dropped anything." The original draft suggested a CSNP
+one second after the partial flood, with a operator-configurable timer.
+The original intent was not to disturb existing periodic CSNPs. PSNPs
+are, however, lighter weight.
+
+>What then do these special PSNPs provide? It could be argued that they
+>provide a lower cost and more targeted recovery mechanism in some
+>circumstances – and that using them in conjunction with periodic CSNPs
+>may speed convergence. However, I think the existing proposal discussed
+>in Section 2.3 of the draft lacks detail and is unlikely to achieve
+>this goal in most circumstances.
+
+In the initial stages of this work, I was fine leaving flooding
+reliability to periodic CSNPs. Flooding failures are just what the
+periodic CSNPs are supposed to account for. Flooding reduction might, in
+some situations, increase the odds of a flooding failure occurring, but
+it seems flooding failures are pretty rare, so the additional overhead
+probably isn't needed.
+
+This really comes down to assessing the trade-off between ensuring
+proper flooding as quickly as possible and the additional processing
+overhead of the "quick check" PSNP/CSNP. I don't know if there is going
+to be a "universal answer" for everyone (?). Some folks are going to be
+more comfortable with some sort of "quick check," others are going to
+see (as your analysis shows) that such a check isn't really needed.
+
+Suggestion--what if we changed this implementations MAY bring their
+existing timer up so the next CSNP is sent more quickly, or
+implementations MAY send a following PSNP. These should SHOULD be
+operator configurable. I don't see that choosing any of these options
+would impact interoperability between implementations, and it would give
+different folks with different comfort levels options?
+
+:-) /r
+Les Ginsberg (ginsberg) <ginsberg@cisco.com>
+
+Nov 28, 2022, 6:22 PM
+
+to russ@riw.us, me, draft-white-lsr-distoptflood.authors@ietf.org, lsr@ietf.org
+Hi Russ!
+
+> -----Original Message-----
+> From: russ@riw.us <russ@riw.us>
+> Sent: Monday, November 28, 2022 4:56 AM
+> To: Les Ginsberg (ginsberg) <ginsberg@cisco.com>; Tony Przygienda
+> <tonysietf@gmail.com>
+> Cc: draft-white-lsr-distoptflood.authors@ietf.org; lsr@ietf.org
+> Subject: Re[2]: [Lsr] Questions on draft-white-lsr-distoptflood
+>
+>
+> >1)You can successfully deploy this algorithm in the presence of nodes
+> >which do NOT support this algorithm. But you cannot successfully deploy
+> >this algorithm in the presence of nodes which enable a different
+> >flooding reduction algorithm.
+>
+> This is correct. There seem to be two sides to this situation, however.
+> Some operators will likely not want to deploy
+> draft-ietf-lsr-dynamic-flooding to deploy flooding reduction because it
+> is "something else to break," or it interferes in some way with
+> incremental deployment. I'm sympathetic to this point of view, so I'm a
+> little skittish about making the signaling in dynamic-flooding a
+> MUST--but I'm perfectly happy to make it a MAY, or perhaps a SHOULD, if
+> folks think that is useful.
+>
+[LES:] The question I am raising is whether you think it is important to support a means
+of determining that one and only one flooding reduction algorithm is active at a given time.
+This would seem to be desirable and is what draft-ietf-lsr-dynamic-flooding provides.
+
+If you, as a protocol vendor, want to provide a proprietary way of enabling draft-white-lsr-distoptflood and telling your customers "to be careful not to enable some other flooding reduction algorithm" that's out of scope for this discussion and for the draft. That's a matter between you and your customers. And you could still do that while also providing support for draft-ietf-lsr-dynamic-flooding.
+[LES:] Either your algorithm works or it doesn't. 😊
+If it works (and I am not suggesting that it doesn't), then there should be no flooding unreliability/failures in normal operation. We are then left with prudence and an abundance of caution to ensure we can recover from transient events/implementation bugs.
+Periodic CSNPs should be sufficient.
+Optimizations in this area should be done with caution as you are optimizing for the unlikely cases and therefore need to ensure that the goodness such an optimization may provide is not outweighed by the cost.
+I see no need for additional mechanisms. But if you are going to propose them, please do more diligence both in analyzing when they are helpful and when they aren't and do a better job of explaining when/how they should be used.
+
+   Les
+
+
+> :-) /r
+
+Tony Przygienda <tonysietf@gmail.com>
+
+Nov 28, 2022, 7:05 PM
+
+to Les, russ@riw.us, draft-white-lsr-distoptflood.authors@ietf.org, lsr@ietf.org
+
+
+On Mon, Nov 28, 2022 at 6:22 PM Les Ginsberg (ginsberg) <ginsberg@cisco.com> wrote:
+
+    Hi Russ!
+
+    > -----Original Message-----
+    > From: russ@riw.us <russ@riw.us>
+    > Sent: Monday, November 28, 2022 4:56 AM
+    > To: Les Ginsberg (ginsberg) <ginsberg@cisco.com>; Tony Przygienda
+    > <tonysietf@gmail.com>
+    > Cc: draft-white-lsr-distoptflood.authors@ietf.org; lsr@ietf.org
+    > Subject: Re[2]: [Lsr] Questions on draft-white-lsr-distoptflood
+    >
+    >
+    > >1)You can successfully deploy this algorithm in the presence of nodes
+    > >which do NOT support this algorithm. But you cannot successfully deploy
+    > >this algorithm in the presence of nodes which enable a different
+    > >flooding reduction algorithm.
+    >
+    > This is correct. There seem to be two sides to this situation, however.
+    > Some operators will likely not want to deploy
+    > draft-ietf-lsr-dynamic-flooding to deploy flooding reduction because it
+    > is "something else to break," or it interferes in some way with
+    > incremental deployment. I'm sympathetic to this point of view, so I'm a
+    > little skittish about making the signaling in dynamic-flooding a
+    > MUST--but I'm perfectly happy to make it a MAY, or perhaps a SHOULD, if
+    > folks think that is useful.
+    >
+    [LES:] The question I am raising is whether you think it is important to support a means of determining that one and only one flooding reduction algorithm is active at a given time.
+    This would seem to be desirable and is what draft-ietf-lsr-dynamic-flooding provides.
+
+    If you, as a protocol vendor, want to provide a proprietary way of enabling draft-white-lsr-distoptflood and telling your customers "to be careful not to enable some other flooding reduction algorithm" that's out of scope for this discussion and for the draft. That's a matter between you and your customers. And you could still do that while also providing support for draft-ietf-lsr-dynamic-flooding.
+
+
+Your point, now that you make it more clear, is fair and as I said,
+I'm against trying to figure out based on some indication of reduction/algorithm used and mismatches _what_ to do
+(i.e. procedures). I'm not against indicating that flood reduction is used, i.e. this draft sending a
+TLV (or maybe some variant of the TLV used in the dynamic-flooding draft which this draft could refer).
+A SHOULD seems fine here unless you argue eloquently why you think a MUST is needed ;-)
+
+So, yes, if your concern is to detect that _different_ algoirthms/drafts are used and alert the deployment
+of the problematic situation, I'm for it
+
+Footnote: I remain still baffled a bit that this is the same problem in my eyes we have in multi-TLV and
+there you argued the opposite (i.e. not sending indication)
+
+
+--- tny
+.
+
+Tony Przygienda <tonysietf@gmail.com>
+
+Nov 28, 2022, 7:27 PM
+
+to Les, draft-white-lsr-distoptflood.authors@ietf.org, lsr@ietf.org
+
+
+On Mon, Nov 28, 2022 at 9:39 AM Les Ginsberg (ginsberg) <ginsberg@cisco.com> wrote:
+
+    Tony –
+
+
+
+    In the interest of brevity, I am not going to respond in detail to each of your points. My reply focuses on two things.
+
+
+okey, thanks, point 1) answered in other meail.
+
+
+    ...
+
+
+
+    The mechanisms proposed in draft-ietf-lsr-dynamic-flooding are analogous to what is used for DIS election and (more recently) for selecting the winning FAD for a given flex-algo. Given the significant deployment of flex-algo and the long history of DIS election, I am surprised at the degree of concern you have for the use of these mechanisms.
+
+
+well, DIS is on a single LAN, not network wide so you can break a single LAN.  I stay out the FAD discussion
+given how fresh the stuff is ;-) Plus, a broken FAD would break a FAD (or in other one topology flavor/parts of
+network AFAIR), a broken flood reduction would brck the whole network.
+
+
+
+
+    2)Regarding the use of PSNPs…you propose to send a PSNP (once apparently) which has the LSP entries for all the LSPs which you chose NOT to flood to a given node (minus any LSPs for which you may have received an explicit ack) in the most recent time interval - suggested to be one second.
+
+
+ack
+
+
+    What will happen when you send this? Let’s use a simple example where one LSP was selectively flooded – call it A.00-01(Seq #100).
+
+    NOTE: This example assumes a P2P circuit.
+
+
+
+    a)Neighbor receives the PSNP, already has A.00-01(Seq #100) in its LSPDB – no action taken. All is good.
+
+    b)Neighbor receives the PSNP, does not have A.00-1(Seq #100) in its LSPDB – sends a PSNP back to the originator requesting that the LSP be flooded. At this point I assume normal flooding procedures apply i.e., SRM flag is set, causing the LSP to be flooded, and I assume SRM remains set until the LSP is acknowledged.
+
+    All is good – but the additional flooding is likely to be redundant as the node which had the responsibility for sending this LSP to your neighbor should be doing so reliably.
+
+
+yepp. During normal flooding it should be minuscule overhead. During heavy flooding we batch PSNP, about as good as we can do AFAIS.
+
+
+    c)Neighbor does not receive the PSNP. If the neighbor does not have A.00-01(Seq #100) in its database, the one time sending of the special PSNP won’t trigger sending of the missing LSP. As the draft does not propose that the special PSNP be resent, I assume during the next time interval the only LSP entries that would be sent in the next special PSNP would be other LSPs that were partially flooded in the subsequent interval – not A.00-01.
+
+
+yepp, in this scenario where our belt breaks we have the CSNP suspenders since we cannot differentiate this from scenario a). Not that different from normal ISIS where on a CNSP a node sends a PSNP to get a missing LSP. We don't retransmit that either AFAIR (which would be a possibility in the protocol though a complex one). Unless my brain skipped a cycle here and I'm too lazy right now to dig through the implementation/10589 to remember ...
+
+
+
+
+    Periodic CSNPs can be dropped as well, but as periodic CSNPs are guaranteed to be sent continuously at some interval and they cover the entire LSPDB, reliability of the Update process is assured. Under some pathological conditions it might take a significant amount of time to converge, but it is assured.
+
+
+NOw, if you assume that we drop PSNP and _then_ we drop CSNP then we end up in the discussion of "how much do you lose until protocol stops converging" and discover that reduction always slows down convergence, makes it more fragile. Yes, no matter what, it's an optimization and optimizations make things less robust in almost all circumstances.
+
+
+
+
+    What then do these special PSNPs provide? It could be argued that they provide a lower cost and more targeted recovery mechanism in some circumstances – and that using them in conjunction with periodic CSNPs may speed convergence. However, I think the existing proposal discussed in Section 2.3 of the draft lacks detail and is unlikely to achieve this goal in most circumstances.
+
+
+what they provide is fast belt in case some kind of things went wrong upstream from us (origination being source). Let's say a flooding packet got lost, stuck on queues, the non-reflooding node can speed up convergence by making sure the reflooder got the LSP if things upstream choke.
+
+
+
+
+    The time period of 1 second is too aggressive. You may end up sending the special PSNP before the node which has the responsibility for flooding the LSP to your neighbor has even had a chance to do the flooding – which will undermine the benefits of the flooding reduction.
+
+
+yes, that can be discussed and frankly, it's really just an implemenation variable, we don't even have to make constant. It's state compression vs. responsiveness vs. context change in implementation. Normal discussions.
+
+
+
+
+    If you consider the cost of sending/receiving a PSNP is roughly equivalent to the cost of sending/receiving an LSP, you will have created the equivalent of full mesh flooding every second since every node can expect to receive a PSNP from every neighbor whenever an LSP update is triggered. NOTE: The relative impact will be more noticeable when a small # of LSPs are updated.
+
+
+the point of PSNPs is that we pack them and you only send a small header so no, I think the cost will be significantly lower. We could have optimized further and say " _if_ something is a reflooder it should NOT send the PSNP to the non-reflooders." since those are "leaves" hanmging off but this makes algoirithm less robust on e.g. hash mismatches during convergnece
+
+
+
+
+    And since the node which is responsible for flooding to a particular neighbor should be doing so reliably, under most circumstances the special PSNP is not needed at all – so why choose an aggressive time interval for sending it?
+
+
+I read you. Basically anything much faster than CSNP intervals is fine AFAIS. And ideally, yes, it should make for significant PSNP packing under heavy flooding and not cuase the other nodes to request the LSP since they already got it ;-)
+
+
+
+
+    Periodic CSNPs are sufficient – are typically done at a slow rate (10s of seconds) – and apparently (from your response below) you seem to intend to send periodic CSNPs also (though the draft does not mention this). I am not seeing the benefit of the special PSNP – but if you are committed to this, please provide a more robust description of how they should be used in the draft and an analysis of the benefits under some realistic flooding scenarios.
+
+
+we omitted the CSNP since nothing changes. And yes, we can say CSNPs stay of course and we should say please,
+please send CSNP on p2p even if 10589 doesn't say so (but almost all implemenations I know do it by default anyway since long time).
+
+so yes, very good points you make and feel free to suggest verbiage to cover it or otherwise we take care of that in next releasee
+
+-- tony
+Les Ginsberg (ginsberg) <ginsberg@cisco.com>
+
+Nov 28, 2022, 7:47 PM
+
+to russ@riw.us, me, draft-white-lsr-distoptflood.authors@ietf.org, lsr@ietf.org
+
+Tony -
+
+
+
+
+
+
+
+
+
+[LES:] What is needed is for you to request IANA to assign an algorithm identifier in the registry defined by https://www.ietf.org/archive/id/draft-ietf-lsr-dynamic-flooding-11.html#section-7.3
+
+
+
+So, yes, if your concern is to detect that _different_ algoirthms/drafts are used and alert the deployment of the problematic situation, I'm for it
+
+
+
+Footnote: I remain still baffled a bit that this is the same problem in my eyes we have in multi-TLV and there you argued the opposite (i.e. not sending indication)
+
+
+
+[LES:] If you want to discuss this, please start a separate thread. What I will say here is that dynamic-flooding is defining advertisements which are actually used by the protocol implementation.
+
+What was proposed in the context of MP-TLV is an advertisement which could not be used by the protocol – it was intended only as information for the operator.
+
+BIG DIFFERENCE!!
+
+
+
+   Les
+
+
+
+
+
+--- tny
+
+.
+Les Ginsberg (ginsberg) <ginsberg@cisco.com>
+
+Nov 28, 2022, 8:04 PM
+
+to me, draft-white-lsr-distoptflood.authors@ietf.org, lsr@ietf.org
+
+Tony –
+
+
+
+I will wait for the next draft version – seems like we are in general agreement.
+
+
+
+I would caution regarding periodic CSNPs on P2P networks. Yes – many implementations support this – but not all do so by default. So assuming that periodic CSNPs are sent on P2P circuits and therefore nothing needs to be said in this regard isn’t justified.
+Tony Przygienda <tonysietf@gmail.com>
+
+Nov 29, 2022, 9:39 AM
+
+to Les, draft-white-lsr-distoptflood.authors@ietf.org, lsr@ietf.org
+ack, good to see I grok'ed what you said and we on same page. Next version will incorporate
+
+-- tony

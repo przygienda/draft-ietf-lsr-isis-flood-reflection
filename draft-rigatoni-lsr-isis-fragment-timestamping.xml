@@ -1,0 +1,294 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- This template is for creating an Internet Draft using xml2rfc,
+    which is available here: http://xml.resource.org. -->
+
+<?xml-stylesheet type='text/xsl' href='rfc2629.xslt' ?>
+<?rfc strict="yes" ?>
+<?rfc toc="yes"?>
+<?rfc tocdepth="4"?>
+<?rfc symrefs="yes"?>
+<?rfc sortrefs="yes" ?>
+<?rfc compact="yes" ?>
+<?rfc subcompact="no" ?>
+<rfc xmlns:xi="http://www.w3.org/2001/XInclude" category="std" docName="draft-rigatoni-lsr-isis-fragment-timestamping-03" ipr="trust200902" obsoletes="" updates="" submissionType="IETF" xml:lang="en" tocInclude="true" tocDepth="3" symRefs="true" sortRefs="true" version="3">
+
+    <!-- ***** FRONT MATTER ***** -->
+
+    <front>
+
+        <title>Optional IS-IS Fragment Timestamping</title>
+
+        <author initials='T.' surname='Przygienda' fullname='Tony Przygienda'>
+            <organization>Juniper Networks</organization>
+            <address>
+                <email>prz@juniper.net</email>
+            </address>
+        </author>
+
+        <author initials='C.' surname='Barth' fullname='Colby Barth'>
+            <organization>Juniper Networks</organization>
+            <address>
+                <email>cbarth@juniper.net</email>
+            </address>
+        </author>
+
+
+
+
+        <date/>
+
+        <abstract>
+
+            <t>
+
+
+                Many applications in today’s networks rely on reliable and timely flooding of link-state information,
+                such as, but not limited to Traffic Engineered networks.  If such link-state information is delayed
+                it can be difficult for those applications to adequately fulfill their intended functionality.
+                This document describes extensions
+                to ISIS supporting distribution of fragment origination time.  The origination time can be used to aid
+                troubleshooting and/or by the applications themselves to improve their behavior.
+                Additionally, a mechanism is proposed by which the consistency of databases on all routers in
+                the network can be easily verified and a rough metric of diffusion behavior derived.
+
+            </t>
+
+
+        </abstract>
+
+    </front>
+
+    <middle>
+
+        <section title="Introduction" anchor="intro">
+            <t>
+                Many applications in today’s networks rely on reliable and timely flooding of link-state information, such as,
+                but not limited to Traffic Engineered networks and advanced telemetry solutions.  If such information is delayed during
+                flooding it can be difficult for those
+                applications to adequately fulfill their intended purpose.  This document describes extensions to ISIS allowing it
+                to carry the origination time on each fragment.
+                The origination time can be used to aid troubleshooting of large domains and/or by the applications themselves
+                to improve their behavior.
+            </t>
+            <t>
+
+                As an example, in the case of Traffic Engineered Networks synchronization of the Traffic Engineering
+                Database (TED) enables the compute nodes to adapt to changes in the network state and/or react to
+                network events in a timely manner. If link state information is delayed during the flooding process this
+                can result in an unsynchronized TED and easily lead to service degradation due to substandard
+                re-optimization of network load. More specifically, in RSVP-TE networks, a TE path computed using a
+                specific snapshot of the TED may be rejected during signaling by a transit node because of bandwidth
+                unavailability on a specific link (link bandwidth information in the snapshot of TED used during
+                computation may not be “current”). When the ingress is subsequently notified of this “error” via RSVP
+                signaling, the link in question is avoided in the subsequent path computation and an alternate path is
+                sought. An implementation may use a configurable “hold time” to determine how long this link needs to be
+                avoided. The awareness of the distribution delay statistics can be used by implementations to
+                dynamically adapt an appropriate “hold time” for a given TE link (instead of using a blanket
+                topology-wide configuration). Therefore, the origination time proposed in this document is meant to be
+                used by a compute node(s) or by an operator of Traffic Engineered Network to measure any delays incurred
+                in TED synchronization. The awareness of delays in the distribution of information can be incorporated
+                further into algorithms and network tooling to improve the responsiveness and quality of decisions
+                taken.
+            </t>
+
+            <t>
+                In a similar vein it is important in large networks when they are in a stable state to measure
+                whether all databases have synchronized properly and derive the delays involved in the propagation
+                of information across the network. This document proposes an extension to the yang schema that allows
+                an easy access to such information.
+            </t>
+
+
+        </section>
+
+        <section title="Timestamp TLV" anchor="tlvs">
+            <t>This section defines a new, optional TLV that can be present in any fragment. In case of multiple
+                instances of the TLV in a fragment only the first occurrence MUST be used. The semantics of the TLV is the point in time the
+                fragment with the current sequence number has been generated. Its absence signifies that such
+                information is not available due to host of possible issues, one of them lack of clock
+                with synchronization precise enough. </t>
+            <t>
+                For practical purposes, although desirable, timestamping the moment a fragment is flooded
+                would be preferable but beside practical implementation problems this could generate on different
+                interfaces the same fragment with different content which breaks one of the fundamental
+                tenants of link-state protocols. However, an implementation is free to choose to use, e.g. the moment
+                the fragment is queued for flooding first time rather than the time the version is generated.
+            </t>
+            <t>To save space the timestamp is following semantically NTP seconds epoch <xref target="RFC5905"/> with the exception of
+                an extra bit in the seconds field to extend the wrap around and
+                carrying only 2^-8 of a second as maximum resolution of the timestamp since this is considered
+                sufficient for link-state purposes. The specification follows further guidelines of <xref target="RFC8877"/>
+                as far as possible.
+            </t>
+
+
+            <figure align="left">
+                <artwork align="left" type="ascii-art"><![CDATA[
+   0                   1                   2                   3
+   0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+  |     Type      |     Length    |
+  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+  |                         Seconds                               |
+  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+  |H|     Frac      |    Prec     |
+  +-+-+-+-+-+-+-+-+---------------+
+
+  ]]></artwork>
+            </figure>
+
+            <ul>
+                <li>Type: TBD1</li>
+
+                <li>Length: ...</li>
+
+                <li>Seconds: 4 bytes of number of seconds since the NTP <xref target="RFC5905"/> epoch.</li>
+                <li>H(-Bit): 1 bit. Extra high order bit is used to prevent wrap-around in 2036 and pushes it out to 2242. The offset can be constructed
+                    in network order `HB` shifted to left without overflow by 32 bits and the `Seconds` field OR'ed into the according value.</li>
+                <li>Fraction: 8-bits of fraction of the second in units of 2^-8 which is  equivalent
+                    to 1/256 of a second or roughly 4 msecs resolution. </li>
+                <li>Precision: 7 bits indicating the maximum possible slip (either in future or past)
+                    of the clock used to generate the
+                    timestamp (depending on the synchronization
+                    protocol) as 2^Precision where at minimum of the range signifies 2 msec or better precision
+                    and the maximum of the range amounts to 256 msec precision or less. A node that cannot achieve
+                    this minimum precision required SHOULD NOT advertise the fragment timestamp.</li>
+            </ul>
+
+        </section>
+
+
+        <section title="Operational and Deployment Considerations">
+            <t>
+                    A requirement for the correct interpretation of the additions proposed in this document is an
+                    infrastructure capable of synchronizing time across devices involved so the timestamps at the various points
+                    of interest become comparable.
+                    This could be accomplished by utilizing NTP <xref target="RFC5905"/>, Precision Time Protocol (PTP) IEEE Std. 1588 <xref target="IEEEstd1588"/>
+                    or 802.1AS <xref target="IEEEstd8021AS"/> designed for bridged LANs. The achieved precision is carried
+                    in the timestamp of the fragment.
+
+            </t>
+
+            <t>
+                Though the timestamp can be very useful in deriving measurement of behavior in a deployed IS-IS network,
+                e.g.
+                maximum incurred flooding delays between any pair of nodes, it should not be used in any attempts to
+                modify the behavior of protocol behavior itself such as e.g. influencing flooding rates. A single
+                badly synchronized clock could otherwise change the behavior of parts or even the whole network in
+                unpredictable or even detrimental way.
+
+            </t>
+        </section>
+
+        <section title="Yang Extensions for Database Checksum">
+            <t>
+                To allow for quick validation of database synchronization across all nodes a node can implement
+                yang extensions providing the checksum of all fragments per level. The extension includes the
+                time difference from the last checksum change which facilitates measurement of flooding behavior
+                across the network.
+            </t>
+
+            <t>
+                Aged out LSPs are excluded from the checksum calculation.
+            </t>
+
+            <t>
+                Reference checksum algorithm for a fragment is given in <xref target="csum_algo"/>. The overall checksum
+                is the XOR of all fragment checksums.
+            </t>
+
+            <t>
+            Yang extensions are given in TBD.</t>
+
+
+        </section>
+
+    </middle>
+
+    <back>
+
+
+        <references title="Normative References">
+
+
+            <!--
+            <reference anchor="ISO10589">
+                <front>
+                    <title>Intermediate system to Intermediate system intra-domain
+                        routeing information exchange protocol for use in conjunction with
+                        the protocol for providing the connectionless-mode Network Service
+                        (ISO 8473)
+                    </title>
+
+                    <author>
+                        <organization abbrev="ISO">International Organization for Standardization</organization>
+                    </author>
+
+                    <date month="Nov" year="2002"/>
+                </front>
+
+                <seriesInfo name="ISO/IEC" value="10589:2002, Second Edition"/>
+            </reference>
+            -->
+
+            <reference anchor="IEEEstd1588" target="https://ieeexplore.ieee.org/document/4579760/">
+                <front>
+                    <title>IEEE Standard for a Precision Clock Synchronization Protocol for
+                        Networked Measurement and Control Systems</title>
+                    <seriesInfo name="IEEE" value="Standard 1588"/>
+                    <author>
+                        <organization>IEEE</organization>
+                    </author>
+                    <date/>
+                </front>
+            </reference>
+
+            <reference anchor="IEEEstd8021AS" target="https://ieeexplore.ieee.org/document/5741898/">
+                <front>
+                    <title>IEEE Standard for Local and Metropolitan Area Networks - Timing
+                        and Synchronization for Time-Sensitive Applications in Bridged Local
+                        Area Networks</title>
+                    <seriesInfo name="IEEE" value="Standard 802.1AS"/>
+                    <author>
+                        <organization>IEEE</organization>
+                    </author>
+                    <date/>
+                </front>
+            </reference>
+
+        </references> <!-- end of normative references -->
+
+        <references title="Informative References">
+            <xi:include href='https://xml2rfc.tools.ietf.org/public/rfc/bibxml/reference.RFC.5905.xml'/>
+
+            <xi:include href='https://xml2rfc.tools.ietf.org/public/rfc/bibxml/reference.RFC.8877.xml'/>
+
+        </references> <!-- end of informative references -->
+
+        <section title="Checksum Reference Algorithm" anchor="csum_algo">
+
+            <figure>
+                <artwork align="center" name="" type="" alt=""><![CDATA[
+<CODE BEGINS>
+    pub(crate) fn lsdb_fingerprint_component(&self) -> u64 {
+        let mut result: u64 = 0;
+        let system_id: &[u8] = self.lsp_id.system_id.as_ref();
+        for i in system_id.iter().chain(&[self.lsp_id.pseudonode]) {
+            result <<= 8;
+            result ^= *i as u64;
+        }
+        // fragment checksum
+        result ^= (self.cksum as u64) << 48;
+        // This is equal to the PDU length advertised by the fragment
+        result ^= (self.raw.len() as u64) << 32;
+        result
+    }
+<CODE ENDS>
+]]></artwork>
+            </figure>
+
+        </section>
+
+    </back>
+
+</rfc>
