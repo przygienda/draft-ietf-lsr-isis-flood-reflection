@@ -16,19 +16,19 @@
 
     <front>
 
-        <title>Optional IS-IS Fragment Timestamping</title>
+        <title>Optional IS-IS Fragment Timestamping and Database Fingerprint</title>
 
         <author initials='T.' surname='Przygienda' fullname='Tony Przygienda'>
-            <organization>Juniper Networks</organization>
+            <organization>HPE Juniper Networking</organization>
             <address>
-                <email>prz@juniper.net</email>
+                <email>antoni.przygienda@hpe.com</email>
             </address>
         </author>
 
         <author initials='C.' surname='Barth' fullname='Colby Barth'>
-            <organization>Juniper Networks</organization>
+            <organization>HPE Juniper Networking</organization>
             <address>
-                <email>cbarth@juniper.net</email>
+                <email>colby.barth@hpe.com</email>
             </address>
         </author>
 
@@ -101,7 +101,7 @@
                 In a similar vein it is important in large networks when they are in a stable state to measure
                 whether all databases have synchronized properly and derive the delays involved in the propagation
                 of information across the network. This document proposes an extension to the yang schema that allows
-                an easy access to such information.
+                easy access to such information.
             </t>
 
 
@@ -186,20 +186,20 @@
             </t>
         </section>
 
-        <section title="Yang Extensions for Database Checksum">
+        <section title="Yang Extensions for Database Fingerprint">
             <t>
                 To allow for quick validation of database synchronization across all nodes a node can implement
                 yang extensions providing the checksum of all fragments per level. The extension includes the
-                time difference from the last checksum change which facilitates measurement of flooding behavior
+                time difference from the last fingerprint change which facilitates measurement of flooding behavior
                 across the network.
             </t>
 
             <t>
-                Aged out LSPs are excluded from the checksum calculation.
+                Aged out LSPs are excluded from the fingerprint calculation.
             </t>
 
             <t>
-                Reference checksum algorithm for a fragment is given in <xref target="csum_algo"/>. The overall checksum
+                Reference checksum algorithm for a fragment is given in <xref target="csum_algo"/>. The overall fingerprint
                 is the XOR of all fragment checksums.
             </t>
 

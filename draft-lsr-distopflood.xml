@@ -10,7 +10,7 @@
 <?rfc sortrefs="yes" ?>
 <?rfc compact="yes" ?>
 <?rfc subcompact="no" ?>
-<rfc xmlns:xi="http://www.w3.org/2001/XInclude" category="std" docName="draft-ietf-lsr-distoptflood-12"
+<rfc xmlns:xi="http://www.w3.org/2001/XInclude" category="std" docName="draft-ietf-lsr-distoptflood-13"
      ipr="trust200902" obsoletes="" updates="" submissionType="IETF" xml:lang="en"
      tocInclude="true" tocDepth="3" symRefs="true" sortRefs="true" version="3">
 
@@ -405,7 +405,7 @@
                     <ol spacing="normal" type="%C)">
                         <li>Set a short, configurable timer which should be significantly shorter than CSNP interval used.</li>
                         <li>When the timer expires, send Partial Sequence Number Packet (PSNP) of all LSPs that have *not*
-                            been re-flooded during the timer runtime to all neighbors unless an up-to-date PSNP or
+                            been re-flooded during the timer runtime to <em>all</em> neighbors unless an up-to-date PSNP or
                             CSNP has been already received from the neighbor.
                         </li>
                         <li>Per normal protocol procedures process any Partial Sequence Number Packets (PSNPs)
