@@ -1,0 +1,500 @@
+<?xml version="1.0" encoding="utf-8"?>
+<?xml-stylesheet type='text/xsl' href='rfc2629.xslt' ?>
+<?rfc strict="yes" ?>
+<?rfc toc="yes"?>
+<?rfc tocdepth="4"?>
+<?rfc symrefs="yes"?>
+<?rfc sortrefs="yes" ?>
+<?rfc compact="yes" ?>
+<?rfc subcompact="no" ?>
+<rfc xmlns:xi="http://www.w3.org/2001/XInclude" category="std"
+     docName="draft-ietf-lsr-flood-reduction-arch-01" ipr="trust200902"
+     obsoletes="" updates="" submissionType="IETF" xml:lang="en" tocInclude="true" tocDepth="3"
+     symRefs="true" sortRefs="true" version="3">
+
+    <front>
+    <title>Flooding Reduction Algorithms Framework</title>
+    <author fullname="Tony Przygienda" initials="T." surname="Przygienda">
+      <organization>HPE</organization>
+      <address>
+        <postal>
+          <street>1701 East Mossy Oaks Road
+          </street>
+          <city>Spring</city>
+          <region>TX
+          </region>
+          <code>77389
+          </code>
+          <country>USA
+          </country>
+        </postal>
+        <phone/>
+        <email>antoni.przygienda@hpe.com
+        </email>
+        <uri/>
+      </address>
+    </author>
+    <author fullname="Shraddha Hegde" initials="S." surname="Hegde">
+      <organization>HPE</organization>
+      <address>
+        <postal>
+          <street>1701 East Mossy Oaks Road
+          </street>
+          <city>Spring</city>
+          <region>TX
+          </region>
+          <code>77389
+          </code>
+          <country>USA
+          </country>
+        </postal>
+        <phone/>
+        <email>shraddha.hegde@hpe.com
+        </email>
+        <uri/>
+      </address>
+    </author>
+<author fullname="Jordan Head" initials="J." surname="Head">
+      <organization>HPE</organization>
+      <address>
+        <postal>
+          <street>1701 East Mossy Oaks Road
+          </street>
+          <city>Spring</city>
+          <region>TX
+          </region>
+          <code>77389
+          </code>
+          <country>USA
+          </country>
+        </postal>
+        <phone/>
+        <email>jordan.head@hpe.com
+        </email>
+        <uri/>
+      </address>
+    </author>
+    <date/>
+    <abstract>
+      <t>
+          This document introduces a framework making it possible to deploy multiple flood
+          reduction algorithms within the same IGP domain in an interoperable fashion.
+      </t>
+    </abstract>
+  </front>
+  <middle>
+      <section title="Introduction">
+          <t>
+              Scenarios exist where multiple distributed (or centralized) flood reduction
+              algorithms may be deployed simultaneously within an IGP domain. These scenarios
+              necessitate certain agreed on cooperative behaviors between the involved
+              algorithms to ensure the correctness of the overall solution. This is true
+              in both permanent and transient (i.e., migration) deployment cases.
+              Fortunately, existing graph theory concepts allow to provide guidance
+              toward the design of algorithms
+              with the necessary properties to ensure their interoperable coexistence.
+              </t>
+          <t>
+              This document
+              presents the necessary requirements for the involved algorithms
+              and the details of a framework for their interoperable deployment.
+              Although running multiple algorithms simultaneously may not be a preferred operational
+              choice,
+              it is necessary if the migration from one
+              algorithm to another with minimal network disruption is a priority.
+              A migration itself may be caused by the discovery of defects in the deployed algorithms
+              or the deployment of new algorithms that offer improvements.
+          </t>
+
+          <t>
+              Dealing with interoperability or lack thereof
+              between this framework and other published frameworks such as e.g.
+              <xref target="RFC9667"/> is explicitly outside the scope of this document.
+          </t>
+      </section>
+    <section title="Flooding Pruner Framework">
+      <section title="Definitions and Axioms">
+        <t>
+            This section outlines a framework that allows the operation of multiple different
+            flood reduction algorithms (called
+            <em>flooding pruners</em> or <em>pruners</em> from here on) in an interoperable fashion.
+        </t>
+        <t>
+            An important observation upfront, which will become clear later in this section, is
+            that full, non-optimized
+            flooding presents a special case of a
+            pruner itself. Normal flooding includes all adjacencies without any pruning,
+            and hence we name it the <em>non-pruner</em>
+            or <em>zero</em> for short.
+        </t>
+        <section title="Maximum of One Flooding Pruner on a Node">
+          <t>
+            This framework
+            permits the use of at most one pruner on each node. It allows to change
+            a specific pruner at any time on any subset of nodes in the network while limiting the impact
+            to the node itself and possibly the re-convergence of a set of nodes within its connected component.
+          </t>
+        </section>
+        <section title="Connected Component" anchor="cc">
+          <t>
+              A <em>connected component</em> (or component for short) is defined as a subset of all nodes
+              in the network
+            running the same pruner, e.g. A
+            (such nodes are denoted by the set notation of A|) where each of the nodes has to be connected to all  other nodes by a path
+            that traverses only nodes that run A.
+            Observe that there well may be in the network multiple components that
+            are not connected, but that run the same pruner algorithm. We denote in such case a component for pruner A as A|, and if
+            two <em>disjoint</em> components running the same algorithm A are present in the network, we denote such second set
+              as A|' and by extension we use A|'' notation for further such sets.
+          </t>
+            <t>
+                Non-pruners also build components denoted as Z| and its primes.
+            </t>
+            <t>
+                Another way to visualize components is to consider a network running multiple pruners as
+                 "islands running pruning algorithms" that are connected to each other by components
+                running non-pruners (i.e. using normal flooding).
+            </t>
+
+        </section>
+        <section title="Flooding Connected Dominating Sets">
+          <t>
+            A pruner may choose within its component a subset of links to flood while making sure that the component
+            remains connected. In other words, after suppressing flooding on some links within the component
+              there must still exist paths consisting of the remaining links that connect each pair of nodes
+            in the component. We use for such remaining links the term
+              <em>flooding connected dominating set</em> or CDS for short (more precisely,
+             a not necessarily loop-free edge dominating set).
+              Such a CDS is colloquially often called <em>flooding
+              topology</em> in context of flood reduction algorithms. A simple spanning
+            tree is an easily visualized special case of a CDS. We denote such
+            a CDS for a component A| as A|*.
+            A|* is often not unique for a component and many different sets of links can
+            be a CDS. Nor is it required that a CDS has to be loop-free since there may be many different
+            paths on the CDS between two nodes in a component. Therefore, it is possible in a most extreme
+              case that each LSP
+            is flooded on a different CDS.
+              </t>
+            <t>
+              To summarize the section above in simple terms,
+            a pruner must choose at least one set of flooding links that guarantees that
+            all information
+            can reach all the
+            nodes in the component.
+          </t>
+        </section>
+        <section title="Rules for Flooding Pruners" anchor="rules">
+          <t>
+            Any flood reduction algorithm expecting to interoperate with other algorithms within this framework
+              but without
+           having to understand their behavior MUST adhere to the
+            following rules. Otherwise, the algorithm cannot be expected to accommodate other algorithms in the network
+              at the same time or is in other words
+            a ship in the night.
+          </t>
+          <ol spacing="normal">
+                <li>
+                    Each node of a pruner (except the non-pruner) MUST advertise in its flooded
+                    node information the currently active
+                    pruner. It MUST
+                    also understand such information as advertised by other nodes in the network. A node running
+                    a pruner MUST
+                    NOT
+                    assume implicitly  that a node is a <em>non-pruner</em> or supports or runs the same algorithm.
+                    However, any pruner
+                    can safely assume that any node that does
+                    not advertise any running pruner in its node information
+                    MUST be a non-pruner. Observe that a pruner does not need to understand
+                    how the algorithm of another pruner operates (or even whether
+                    it is centralized, centrally
+                    signalled or fully distributed). The only requirement is that every pruner uses
+                    the same signaling information provided in this framework
+                    which indicates the pruner currently running.
+                </li>
+
+                <li>
+                    A pruner  MUST NOT prune links in components other  than the one
+                    it participates in or assume flooding behavior
+                    on links in other components
+                    (except in the case of a <em>non-pruner</em> where the flooding is well understood). In other words,
+                    each pruner is allowed to prune some links
+                    from flooding, but only strictly  within its own component.
+                </li>
+                <li>
+                    A flooding pruner A
+                    MUST also include in its flooding CDS all links to adjacent components
+                    running a non <em>non-pruner</em> different from A. A node running pruner P that is different
+                    from the <em>non-pruner</em> SHOULD include in
+                    its flooding CDS all links to non-pruners. It MAY use the known behavior the <em>non-pruner</em> for
+                    further optimizations. Nevertheless, such optimizations MUST NOT assume that there is
+                    just a single Z| in the network. This is sufficient (but strictly
+                    speaking, more than necessary) to
+                    guarantee that the overall set of flooding CDSes within each component creates
+                    an overall flooding CDS over the whole network. In other words, the resulting set of links
+                    that still flood connects all nodes in the network.
+                </li>
+                </ol>
+                <t>
+                    This document does not consider other approaches
+                    that guarantee a pruner property on e.g. a clique, i.e. a subgraph where every vertex
+                    is neighbored to all other vertices in the clique. It assumes that such "ship in the night
+                    components" can be considered non-pruners due to their implicit guarantee of
+                    correct flooding to nodes
+                    that are part of their component where connected to other components.
+                </t>
+        </section>
+      </section>
+      <section title="Beneficial Properties of the Flooding Pruner Framework">
+        <t>
+            Nodes are free to use any kind of pruner to calculate optimized
+            flooding. Any mode of computation, distributed or centralized, will work fine as long as it adheres to
+            <xref target="rules"/>. Per <xref target="cc"/> a node will become part of one and exactly
+            one component after choosing a pruner.
+
+        </t>
+        <t>
+            The framework allows but does not assume any centralized instance or election in a
+            component. Computation and communication within each component is completely independent of other
+            components.
+        </t>
+
+          <!--
+        <t>
+            With the exception of a node having to advertise which pruner is active,
+            no configuration is necessary
+            unless the algorithm itself requires it.
+        </t>
+          -->
+
+        <t>
+            A node is free to choose a different pruner or a <em>non-pruner</em> at any point in time independent
+            of all other nodes. It may end up in another component or become a <em>non-pruner</em> with the maximum
+            impact consisting of re-computation within two components that see such node leave or join.
+            For a distributed algorithm, it is likely that only the adjoining nodes have to
+            adjust their pruning decisions.
+            That is to say, the framework allows for node-by-node deployment or migration of pruners
+            without networkwide recomputation of optimized flooding.
+            This is obviously critical to the stability of large networks
+            that may not converge within reasonable time if the whole network were to revert to
+            non-pruning due to networkwide impact. However, such behavior cannot be excluded, for example, in case of
+            election problems due to misconfiguration or topological separation of nodes if the whole
+            network runs a single pruner relying on centralized election.
+            The network itself cannot ensure correctness of a pruner or
+            prevent a pruner having a blast radius of the whole component depending
+            upon the algorithm and further signaling used.
+        </t>
+        <t>
+            Although the framework provides extreme operational flexibility when deploying pruners,
+            the most likely scenarios are a node-by-node deployment of a single pruner in addition to a non-pruner
+            or, if the necessity arises, a node-by-node migration to another pruner.
+        </t>
+      </section>
+
+            <section title="Example">
+                <figure anchor="example1">
+                    <name>Network of Mixed Pruners</name>
+                    <artset>
+                        <artwork align="center" name="" type="svg" src="example_plain.post.svg"></artwork>
+                        <artwork align="center" name="" type="ascii-art" src="example.ascii-art"></artwork>
+                    </artset>
+                </figure>
+
+        <t>
+            <xref target="example1"/> illustrates a network with three pruners running. Two components
+            run pruner A and are denoted as A|' and A|'' and one component runs pruner B. Remaining
+            three components run the <em>non-pruner</em> algorithm (annotated
+            as Z|', Z|'', and Z|'''). CDSes within components are shown by indicating the links that were
+            pruned from flooding as crossed out. Additionally, the links that are included
+            to connect the CDS of the component following the rules listed in
+            <xref target="rules"/> have been made thicker. Despite multiple algorithms and components
+            being present in the network, the complete graph is obviously still covered by the involved CDSes.
+        </t>
+
+        <t>
+            <xref target="example1"/> also illustrates why the overall CDS can easily be more than just a
+            spanning tree of the overall network. A node seeing its neighbor running another algorithm
+            cannot always decide based on local knowledge whether the link should be included in
+            flooding or not. Such a decision could be based on the overall view of the network using some
+            global tie-breaking algorithm.
+            However, due to the potential long flooding paths and one-link minimal cuts, such an algorithm
+            is not considered here but could be proposed in the future.
+        </t>
+
+      </section>
+            <section title="Signaling" anchor="tlvs">
+                <t>Nodes are REQUIRED to signal when they are actively running any pruner (except a non-pruner). The absence of
+                    such an advertisement indicates that a node is either running a non-pruner or some other algorithm where within
+                    its component it behaves in an equivalent fashion while also guaranteeing flooding on links connected to other components.</t>
+                <section title="IS-IS - Active Flood Reduction Algorithm Sub-TLV">
+                    <t>The Active Flood Reduction Algorithm Sub-TLV is advertised as a sub-TLV within a Router Capability TLV (242) defined in <xref target="RFC7981"/>.
+                        It uses the following format:</t>
+
+                    <figure align="left">
+                        <artwork align="center" type="ascii-art"><![CDATA[
+ 0                   1                   2
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|     Type      |     Length    |   Algorithm   |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+      ]]></artwork>
+                    </figure>
+
+                    <ul>
+                        <li><strong>Type: </strong>TBD1</li>
+                        <li><strong>Length: </strong>1</li>
+                        <li><strong>Algorithm: </strong>An 8-bit numerical identifier allocated from
+                            the "IGP Algorithm Type For Computing Flooding Topology" registry.
+                        </li>
+                    </ul>
+                    <t>This sub-TLV MUST only contain the current active running pruner (other than a non-pruner). It MUST be flooded within
+                        a Router Capability TLV that is strictly area-scoped and MUST NOT be leaked between levels.
+                    </t>
+                </section>
+
+                <section title="OSPFv2/OSPFv3 - Active Flood Reduction Algorithm TLV">
+                    <t>The Active Flood Reduction Algorithm TLV is advertised within a Router Information Opaque LSA defined in <xref target="RFC7770"/>.
+                        It uses the following format:</t>
+
+                    <figure align="left">
+                        <artwork align="center" type="ascii-art"><![CDATA[
+ 0                   1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|              Type             |             Length            |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|   Algorithm   |
++-+-+-+-+-+-+-+-+
+      ]]></artwork>
+                    </figure>
+
+                    <ul>
+                        <li><strong>Type: </strong>TBD1</li>
+                        <li><strong>Length: </strong>1</li>
+                        <li><strong>Algorithm: </strong>An 8-bit numerical identifier allocated from
+                            the "IGP Algorithm Type For Computing Flooding Topology" registry.
+                        </li>
+                    </ul>
+
+                    <t>Nodes MUST advertise this TLV when they actively run any pruner (other than a non-pruner).</t>
+
+                    <t>Pruner signaling MUST be flooded in a way that is strictly area-scoped that will not leak between areas.
+                    For OSPFv2, the TLV MUST be flooded within a Router Information (RI) Opaque LSA as Type-10. For OSPFv3, the TLV MUST be flooded within a
+                    Router Information (RI) Opaque LSA with the S2-bit set to 1.</t>
+
+                </section>
+                <section title="Error Handling">
+                    <t>This section defines error handling regardless of the deployed IGP or active algorithm.</t>
+
+                    <t>If a node receives an advertisement with more than one algorithm, it SHOULD be logged at least once.</t>
+                    <t>If a node receives an advertisement with an unrecognized/invalid algorithm, it SHOULD be logged at least once.</t>
+                    <t>If a node receives an advertisement with a mismatched algorithm, it SHOULD be logged at least once.</t>
+
+                </section>
+        </section>
+    </section>
+    <!-- 1 -->
+    <section title="IANA Considerations" toc="default" anchor="IANA">
+        <t>This section requests that IANA reserve a single identical value from each of the following registries.
+            Both should be named: "Active Flood Reduction Algorithm".</t>
+        <ul>
+            <li>IS-IS Sub-TLVs for IS-IS Router CAPABILITY TLV Registry (from within the 1-32767 range)</li>
+            <li>OSPF Router Information (RI) TLVs Registry</li>
+        </ul>
+    </section>
+        <section title="Security Considerations" toc="default">
+            <t>
+                This document outlines a framework for extensions to an IGP protocol for operation on high-density network
+                topologies. Implementations SHOULD implement cryptographic authentication
+                compliant to e.g. <xref target="RFC5304"/>, and should enable other security measures
+                in accordance with the best common practices for the relevant IGP protocol.
+            </t>
+    </section>
+    <!-- end of security considerations -->
+
+
+
+
+      <!--
+        <section anchor="IGP_IANA" title="IANA Section">
+            <t>IANA is requested to set up a registry called "IGP Flooding Pruner Type" under the existing "Interior Gateway
+                Protocol (IGP) Parameters" IANA registry.</t>
+
+            <t>Values in this registry come from the range 0 - 2^16-1.</t>
+
+            <t>
+                The following values are defined:</t>
+            <ul>
+
+                <li>
+                    0 - 127: Standardized algorithms assigned in the registry.
+                </li>
+
+                <li>
+                    128 - 254: Reserved for experimental purposes.
+                </li>
+
+                <li>
+                    255: Reserved.
+                </li>
+
+            </ul>
+        </section>
+
+        -->
+
+
+        <!-- 2 -->
+        <section title="Contributors" toc="default">
+            <t>
+                The following people have contributed to this draft and are mentioned without any particular
+                order: Jordan Head, Acee Lindem, Raj Chetan, Les Ginsberg, Peter Psenak and Tony Li.
+            </t>
+    </section>
+    <!-- end of contributors -->
+
+    </middle>
+
+    <back>
+
+        <references title="Normative References">
+            <xi:include href='https://xml2rfc.tools.ietf.org/public/rfc/bibxml/reference.RFC.7981.xml'/>
+            <xi:include href='https://xml2rfc.tools.ietf.org/public/rfc/bibxml/reference.RFC.7770.xml'/>
+
+
+            <!--
+            <reference anchor="ISO10589">
+                <front>
+                    <title>Intermediate system to Intermediate system intra-domain
+                        routeing information exchange protocol for use in conjunction with
+                        the protocol for providing the connectionless-mode Network Service
+                        (ISO 8473)
+                    </title>
+
+                    <author>
+                        <organization abbrev="ISO">International Organization for Standardization</organization>
+                    </author>
+
+                    <date month="Nov" year="2002"/>
+                </front>
+
+                <seriesInfo name="ISO/IEC" value="10589:2002, Second Edition"/>
+            </reference>
+            -->
+
+        </references> <!-- end of normative references -->
+
+        <references title="Informative References">
+            <xi:include href='https://xml2rfc.tools.ietf.org/public/rfc/bibxml/reference.RFC.5304.xml'/>
+            <xi:include href='https://xml2rfc.tools.ietf.org/public/rfc/bibxml/reference.RFC.9667.xml'/>
+            <!--
+    <xi:include href='https://xml2rfc.tools.ietf.org/public/rfc/bibxml/reference.RFC.5449.xml'/>
+
+    <xi:include href='https://xml2rfc.tools.ietf.org/public/rfc/bibxml/reference.RFC.5614.xml'/>
+    <xi:include href='https://xml2rfc.tools.ietf.org/public/rfc/bibxml/reference.RFC.8126.xml'/>
+    -->
+
+        </references> <!-- end of informative references -->
+
+    </back>
+
+</rfc>
