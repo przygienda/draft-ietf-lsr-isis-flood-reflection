@@ -5,17 +5,17 @@
 Network Working Group                                           R. White
 Internet-Draft                                                    Akamai
 Intended status: Standards Track                                S. Hegde
-Expires: 16 July 2026                                      T. Przygienda
+Expires: 26 July 2026                                      T. Przygienda
                                                         Juniper Networks
                                                                 L. Jalil
                                                                  Verizon
                                                                 D. Voyer
                                                                    Cisco
-                                                         12 January 2026
+                                                         22 January 2026
 
 
                   IS-IS Distributed Flooding Reduction
-                     draft-ietf-lsr-distoptflood-12
+                     draft-ietf-lsr-distoptflood-13
 
 Abstract
 
@@ -53,12 +53,12 @@ Status of This Memo
 
 
 
-White, et al.             Expires 16 July 2026                  [Page 1]
+White, et al.             Expires 26 July 2026                  [Page 1]
 
 Internet-Draft    IS-IS Distributed Flooding Reduction      January 2026
 
 
-   This Internet-Draft will expire on 16 July 2026.
+   This Internet-Draft will expire on 26 July 2026.
 
 Copyright Notice
 
@@ -86,7 +86,7 @@ Table of Contents
        1.2.4.  Flooding Failures . . . . . . . . . . . . . . . . . .   8
        1.2.5.  Deployment Considerations . . . . . . . . . . . . . .   9
        1.2.6.  Implementation Considerations . . . . . . . . . . . .   9
-   2.  Operational Considerations  . . . . . . . . . . . . . . . . .   9
+   2.  Operational Considerations  . . . . . . . . . . . . . . . . .  10
    3.  Security Considerations . . . . . . . . . . . . . . . . . . .  10
    4.  IANA Section  . . . . . . . . . . . . . . . . . . . . . . . .  10
    5.  Contributors  . . . . . . . . . . . . . . . . . . . . . . . .  10
@@ -109,7 +109,7 @@ Table of Contents
 
 
 
-White, et al.             Expires 16 July 2026                  [Page 2]
+White, et al.             Expires 26 July 2026                  [Page 2]
 
 Internet-Draft    IS-IS Distributed Flooding Reduction      January 2026
 
@@ -165,7 +165,7 @@ Internet-Draft    IS-IS Distributed Flooding Reduction      January 2026
 
 
 
-White, et al.             Expires 16 July 2026                  [Page 3]
+White, et al.             Expires 26 July 2026                  [Page 3]
 
 Internet-Draft    IS-IS Distributed Flooding Reduction      January 2026
 
@@ -221,7 +221,7 @@ Internet-Draft    IS-IS Distributed Flooding Reduction      January 2026
 
 
 
-White, et al.             Expires 16 July 2026                  [Page 4]
+White, et al.             Expires 26 July 2026                  [Page 4]
 
 Internet-Draft    IS-IS Distributed Flooding Reduction      January 2026
 
@@ -277,7 +277,7 @@ Internet-Draft    IS-IS Distributed Flooding Reduction      January 2026
 
 
 
-White, et al.             Expires 16 July 2026                  [Page 5]
+White, et al.             Expires 26 July 2026                  [Page 5]
 
 Internet-Draft    IS-IS Distributed Flooding Reduction      January 2026
 
@@ -333,7 +333,7 @@ Internet-Draft    IS-IS Distributed Flooding Reduction      January 2026
 
 
 
-White, et al.             Expires 16 July 2026                  [Page 6]
+White, et al.             Expires 26 July 2026                  [Page 6]
 
 Internet-Draft    IS-IS Distributed Flooding Reduction      January 2026
 
@@ -389,7 +389,7 @@ Internet-Draft    IS-IS Distributed Flooding Reduction      January 2026
 
 
 
-White, et al.             Expires 16 July 2026                  [Page 7]
+White, et al.             Expires 26 July 2026                  [Page 7]
 
 Internet-Draft    IS-IS Distributed Flooding Reduction      January 2026
 
@@ -423,8 +423,8 @@ Internet-Draft    IS-IS Distributed Flooding Reduction      January 2026
 
    B)  When the timer expires, send Partial Sequence Number Packet
        (PSNP) of all LSPs that have *not* been re-flooded during the
-       timer runtime to all neighbors unless an up-to-date PSNP or CSNP
-       has been already received from the neighbor.
+       timer runtime to _all_ neighbors unless an up-to-date PSNP or
+       CSNP has been already received from the neighbor.
 
    C)  Per normal protocol procedures process any Partial Sequence
        Number Packets (PSNPs) received that indicate that neighbors
@@ -436,27 +436,34 @@ Internet-Draft    IS-IS Distributed Flooding Reduction      January 2026
    a newer version the resulting flooding MUST NOT try to use optimized
    flooding distribution.
 
+   If the arriving LSP is older than the one held currently in LSDB the
+   receiving node SHOULD set the SRMflag on TN interface if the
+   interface is on the shortest flooding path from the originator to the
+   receiver of the modified LSP.
+
+
+
+
+
+White, et al.             Expires 26 July 2026                  [Page 8]
+
+Internet-Draft    IS-IS Distributed Flooding Reduction      January 2026
+
+
    If any such re-synchronizations above a configurable threshold is
    required (i.e. PSNPs are sent to the neighbors and are answered with
    requests or CSNPs are indicating significant misses of distributed
    LSPs), an implementation SHOULD notify the network operator via the
    according mechanism about the condition.
 
-
-
-
-White, et al.             Expires 16 July 2026                  [Page 8]
-
-Internet-Draft    IS-IS Distributed Flooding Reduction      January 2026
-
-
 1.2.5.  Deployment Considerations
 
    A node deploying this algorithm on point-to-point links MUST send
-   CSNPs on such links.  This does not represent a dramatic change given
-   most deployed implementations today already exhibit this behavior to
-   prevent possible slow synchronization of IS-IS database across such
-   links and to provide additional periodic consistency guarantees.
+   _periodic_ CSNPs on such links.  This does not represent a dramatic
+   change given most deployed implementations today already exhibit this
+   behavior to prevent possible slow synchronization of IS-IS database
+   across such links and to provide additional periodic consistency
+   guarantees.
 
 1.2.6.  Implementation Considerations
 
@@ -491,20 +498,18 @@ Internet-Draft    IS-IS Distributed Flooding Reduction      January 2026
    should trigger re-origination by the source of a higher version
    correctly.
 
+
+
+
+White, et al.             Expires 26 July 2026                  [Page 9]
+
+Internet-Draft    IS-IS Distributed Flooding Reduction      January 2026
+
+
 2.  Operational Considerations
 
    The extension introduced to flooding in this document exhibits many
    desirable properties important for large production IS-IS networks.
-
-
-
-
-
-
-White, et al.             Expires 16 July 2026                  [Page 9]
-
-Internet-Draft    IS-IS Distributed Flooding Reduction      January 2026
-
 
    This extension is designed to be deployable without initial
    configuration and balances the reduced flooding not only on a single
@@ -548,19 +553,18 @@ Internet-Draft    IS-IS Distributed Flooding Reduction      January 2026
               DOI 10.17487/RFC5120, February 2008,
               <https://www.rfc-editor.org/info/rfc5120>.
 
-   [RFC5304]  Li, T. and R. Atkinson, "IS-IS Cryptographic
-              Authentication", RFC 5304, DOI 10.17487/RFC5304, October
-              2008, <https://www.rfc-editor.org/info/rfc5304>.
 
 
 
 
-
-
-White, et al.             Expires 16 July 2026                 [Page 10]
+White, et al.             Expires 26 July 2026                 [Page 10]
 
 Internet-Draft    IS-IS Distributed Flooding Reduction      January 2026
 
+
+   [RFC5304]  Li, T. and R. Atkinson, "IS-IS Cryptographic
+              Authentication", RFC 5304, DOI 10.17487/RFC5304, October
+              2008, <https://www.rfc-editor.org/info/rfc5304>.
 
    [RFC5449]  Baccelli, E., Jacquet, P., Nguyen, D., and T. Clausen,
               "OSPF Multipoint Relay (MPR) Extension for Ad Hoc
@@ -606,16 +610,17 @@ Authors' Addresses
    Email: russ@riw.us
 
 
+
+
+
+White, et al.             Expires 26 July 2026                 [Page 11]
+
+Internet-Draft    IS-IS Distributed Flooding Reduction      January 2026
+
+
    Shraddha Hegde
    Juniper Networks
    Email: shraddha@juniper.net
-
-
-
-
-White, et al.             Expires 16 July 2026                 [Page 11]
-
-Internet-Draft    IS-IS Distributed Flooding Reduction      January 2026
 
 
    Tony Przygienda
@@ -664,9 +669,4 @@ Internet-Draft    IS-IS Distributed Flooding Reduction      January 2026
 
 
 
-
-
-
-
-
-White, et al.             Expires 16 July 2026                 [Page 12]
+White, et al.             Expires 26 July 2026                 [Page 12]

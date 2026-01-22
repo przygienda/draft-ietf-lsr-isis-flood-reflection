@@ -5,17 +5,17 @@
      5	Network Working Group                                           R. White
      6	Internet-Draft                                                    Akamai
      7	Intended status: Standards Track                                S. Hegde
-     8	Expires: 16 July 2026                                      T. Przygienda
+     8	Expires: 26 July 2026                                      T. Przygienda
      9	                                                        Juniper Networks
     10	                                                                L. Jalil
     11	                                                                 Verizon
     12	                                                                D. Voyer
     13	                                                                   Cisco
-    14	                                                         12 January 2026
+    14	                                                         22 January 2026
     15	
     16	
     17	                  IS-IS Distributed Flooding Reduction
-    18	                     draft-ietf-lsr-distoptflood-12
+    18	                     draft-ietf-lsr-distoptflood-13
     19	
     20	Abstract
     21	
@@ -53,12 +53,12 @@
     53	
     54	
     55	
-    56	White, et al.             Expires 16 July 2026                  [Page 1]
+    56	White, et al.             Expires 26 July 2026                  [Page 1]
     57	
     58	Internet-Draft    IS-IS Distributed Flooding Reduction      January 2026
     59	
     60	
-    61	   This Internet-Draft will expire on 16 July 2026.
+    61	   This Internet-Draft will expire on 26 July 2026.
     62	
     63	Copyright Notice
     64	
@@ -86,7 +86,7 @@
     86	       1.2.4.  Flooding Failures . . . . . . . . . . . . . . . . . .   8
     87	       1.2.5.  Deployment Considerations . . . . . . . . . . . . . .   9
     88	       1.2.6.  Implementation Considerations . . . . . . . . . . . .   9
-    89	   2.  Operational Considerations  . . . . . . . . . . . . . . . . .   9
+    89	   2.  Operational Considerations  . . . . . . . . . . . . . . . . .  10
     90	   3.  Security Considerations . . . . . . . . . . . . . . . . . . .  10
     91	   4.  IANA Section  . . . . . . . . . . . . . . . . . . . . . . . .  10
     92	   5.  Contributors  . . . . . . . . . . . . . . . . . . . . . . . .  10
@@ -109,7 +109,7 @@
    109	
    110	
    111	
-   112	White, et al.             Expires 16 July 2026                  [Page 2]
+   112	White, et al.             Expires 26 July 2026                  [Page 2]
    113	
    114	Internet-Draft    IS-IS Distributed Flooding Reduction      January 2026
    115	
@@ -165,7 +165,7 @@
    165	
    166	
    167	
-   168	White, et al.             Expires 16 July 2026                  [Page 3]
+   168	White, et al.             Expires 26 July 2026                  [Page 3]
    169	
    170	Internet-Draft    IS-IS Distributed Flooding Reduction      January 2026
    171	
@@ -221,7 +221,7 @@
    221	
    222	
    223	
-   224	White, et al.             Expires 16 July 2026                  [Page 4]
+   224	White, et al.             Expires 26 July 2026                  [Page 4]
    225	
    226	Internet-Draft    IS-IS Distributed Flooding Reduction      January 2026
    227	
@@ -277,7 +277,7 @@
    277	
    278	
    279	
-   280	White, et al.             Expires 16 July 2026                  [Page 5]
+   280	White, et al.             Expires 26 July 2026                  [Page 5]
    281	
    282	Internet-Draft    IS-IS Distributed Flooding Reduction      January 2026
    283	
@@ -333,7 +333,7 @@
    333	
    334	
    335	
-   336	White, et al.             Expires 16 July 2026                  [Page 6]
+   336	White, et al.             Expires 26 July 2026                  [Page 6]
    337	
    338	Internet-Draft    IS-IS Distributed Flooding Reduction      January 2026
    339	
@@ -389,7 +389,7 @@
    389	
    390	
    391	
-   392	White, et al.             Expires 16 July 2026                  [Page 7]
+   392	White, et al.             Expires 26 July 2026                  [Page 7]
    393	
    394	Internet-Draft    IS-IS Distributed Flooding Reduction      January 2026
    395	
@@ -423,8 +423,8 @@
    423	
    424	   B)  When the timer expires, send Partial Sequence Number Packet
    425	       (PSNP) of all LSPs that have *not* been re-flooded during the
-   426	       timer runtime to all neighbors unless an up-to-date PSNP or CSNP
-   427	       has been already received from the neighbor.
+   426	       timer runtime to _all_ neighbors unless an up-to-date PSNP or
+   427	       CSNP has been already received from the neighbor.
    428	
    429	   C)  Per normal protocol procedures process any Partial Sequence
    430	       Number Packets (PSNPs) received that indicate that neighbors
@@ -436,206 +436,206 @@
    436	   a newer version the resulting flooding MUST NOT try to use optimized
    437	   flooding distribution.
    438	
-   439	   If any such re-synchronizations above a configurable threshold is
-   440	   required (i.e. PSNPs are sent to the neighbors and are answered with
-   441	   requests or CSNPs are indicating significant misses of distributed
-   442	   LSPs), an implementation SHOULD notify the network operator via the
-   443	   according mechanism about the condition.
+   439	   If the arriving LSP is older than the one held currently in LSDB the
+   440	   receiving node SHOULD set the SRMflag on TN interface if the
+   441	   interface is on the shortest flooding path from the originator to the
+   442	   receiver of the modified LSP.
+   443	
    444	
    445	
    446	
    447	
-   448	White, et al.             Expires 16 July 2026                  [Page 8]
+   448	White, et al.             Expires 26 July 2026                  [Page 8]
    449	
    450	Internet-Draft    IS-IS Distributed Flooding Reduction      January 2026
    451	
    452	
-   453	1.2.5.  Deployment Considerations
-   454	
-   455	   A node deploying this algorithm on point-to-point links MUST send
-   456	   CSNPs on such links.  This does not represent a dramatic change given
-   457	   most deployed implementations today already exhibit this behavior to
-   458	   prevent possible slow synchronization of IS-IS database across such
-   459	   links and to provide additional periodic consistency guarantees.
+   453	   If any such re-synchronizations above a configurable threshold is
+   454	   required (i.e. PSNPs are sent to the neighbors and are answered with
+   455	   requests or CSNPs are indicating significant misses of distributed
+   456	   LSPs), an implementation SHOULD notify the network operator via the
+   457	   according mechanism about the condition.
+   458	
+   459	1.2.5.  Deployment Considerations
    460	
-   461	1.2.6.  Implementation Considerations
-   462	
-   463	   The calculations described here seem complex, which might lead the
-   464	   reader to conclude that the cost of calculation is so much higher
-   465	   than the cost of flooding that this optimization is counter-
-   466	   productive.  First, The description provided here is designed for
-   467	   clarity rather than optimal calculation.  Second, many of the
-   468	   involved calculations can be easily performed in advance and stored,
-   469	   rather than being performed for each LSP occurrence and each
-   470	   neighbor.  Optimized versions of the process described here have been
-   471	   implemented, and do result in strong convergence speed gains.
-   472	
-   473	   Further, a node that decides that the calculations involved may
-   474	   generate an excessive burden during massive topology fluctuations
-   475	   events, and may negatively affect overall protocol behavior, can
-   476	   decide to not apply reduction rules temporarily for any set of LSPs
-   477	   and fully flood those until the conditions abate.
-   478	
-   479	   An implementation in a node MAY choose independently of others to
-   480	   provide a configurable parameter to allow for more than one node in
-   481	   RNL to re-flood, e.g. it may re-flood even if it's only the member
-   482	   that would be chosen from the RNL if a double coverage of THL is
-   483	   required.  The modifications to the algorithm are simple enough to
-   484	   not require further text.
+   461	   A node deploying this algorithm on point-to-point links MUST send
+   462	   _periodic_ CSNPs on such links.  This does not represent a dramatic
+   463	   change given most deployed implementations today already exhibit this
+   464	   behavior to prevent possible slow synchronization of IS-IS database
+   465	   across such links and to provide additional periodic consistency
+   466	   guarantees.
+   467	
+   468	1.2.6.  Implementation Considerations
+   469	
+   470	   The calculations described here seem complex, which might lead the
+   471	   reader to conclude that the cost of calculation is so much higher
+   472	   than the cost of flooding that this optimization is counter-
+   473	   productive.  First, The description provided here is designed for
+   474	   clarity rather than optimal calculation.  Second, many of the
+   475	   involved calculations can be easily performed in advance and stored,
+   476	   rather than being performed for each LSP occurrence and each
+   477	   neighbor.  Optimized versions of the process described here have been
+   478	   implemented, and do result in strong convergence speed gains.
+   479	
+   480	   Further, a node that decides that the calculations involved may
+   481	   generate an excessive burden during massive topology fluctuations
+   482	   events, and may negatively affect overall protocol behavior, can
+   483	   decide to not apply reduction rules temporarily for any set of LSPs
+   484	   and fully flood those until the conditions abate.
    485	
-   486	   An implementation should pay particular attention that the case of a
-   487	   stale LSP with a higher version that persists in the network still
-   488	   works correctly in case the originator reboots and starts with lower
-   489	   version.  Though the flooding of an LSP back to originator is
-   490	   suppressed by this extension the normal PSNP and CSNP procedures
-   491	   should trigger re-origination by the source of a higher version
-   492	   correctly.
-   493	
-   494	2.  Operational Considerations
-   495	
-   496	   The extension introduced to flooding in this document exhibits many
-   497	   desirable properties important for large production IS-IS networks.
-   498	
-   499	
+   486	   An implementation in a node MAY choose independently of others to
+   487	   provide a configurable parameter to allow for more than one node in
+   488	   RNL to re-flood, e.g. it may re-flood even if it's only the member
+   489	   that would be chosen from the RNL if a double coverage of THL is
+   490	   required.  The modifications to the algorithm are simple enough to
+   491	   not require further text.
+   492	
+   493	   An implementation should pay particular attention that the case of a
+   494	   stale LSP with a higher version that persists in the network still
+   495	   works correctly in case the originator reboots and starts with lower
+   496	   version.  Though the flooding of an LSP back to originator is
+   497	   suppressed by this extension the normal PSNP and CSNP procedures
+   498	   should trigger re-origination by the source of a higher version
+   499	   correctly.
    500	
    501	
    502	
    503	
-   504	White, et al.             Expires 16 July 2026                  [Page 9]
+   504	White, et al.             Expires 26 July 2026                  [Page 9]
    505	
    506	Internet-Draft    IS-IS Distributed Flooding Reduction      January 2026
    507	
    508	
-   509	   This extension is designed to be deployable without initial
-   510	   configuration and balances the reduced flooding not only on a single
-   511	   or few trees but uses the information about the origin of the
-   512	   fragment to spread the load across whole topology.
+   509	2.  Operational Considerations
+   510	
+   511	   The extension introduced to flooding in this document exhibits many
+   512	   desirable properties important for large production IS-IS networks.
    513	
-   514	3.  Security Considerations
-   515	
-   516	   This document outlines flooding algorithm modification to the IS-IS
-   517	   protocol for operation most useful at large scale or in high density
-   518	   network topologies.  The extension does not present any new attack
-   519	   vectors even if nodes start to advertise a byzantine attack of
-   520	   signalling that they run the extension while still following standard
-   521	   behavior.  As always, ISIS implementations SHOULD implement IS-IS
-   522	   cryptographic authentication, as described in [RFC5304], and should
-   523	   enable other security measures in accordance to best common practices
-   524	   for the IS-IS protocol.
-   525	
-   526	4.  IANA Section
-   527	
-   528	   IANA is requested to allocate a TBD value in 1-127 range with
-   529	   description of "Modified MANET Reduction" further referring to this
-   530	   document as specification in the "IGP Algorithm Type For Computing
-   531	   Flooding Topology" registry.
+   514	   This extension is designed to be deployable without initial
+   515	   configuration and balances the reduced flooding not only on a single
+   516	   or few trees but uses the information about the origin of the
+   517	   fragment to spread the load across whole topology.
+   518	
+   519	3.  Security Considerations
+   520	
+   521	   This document outlines flooding algorithm modification to the IS-IS
+   522	   protocol for operation most useful at large scale or in high density
+   523	   network topologies.  The extension does not present any new attack
+   524	   vectors even if nodes start to advertise a byzantine attack of
+   525	   signalling that they run the extension while still following standard
+   526	   behavior.  As always, ISIS implementations SHOULD implement IS-IS
+   527	   cryptographic authentication, as described in [RFC5304], and should
+   528	   enable other security measures in accordance to best common practices
+   529	   for the IS-IS protocol.
+   530	
+   531	4.  IANA Section
    532	
-   533	5.  Contributors
-   534	
-   535	   The following people have contributed to this draft or provided
-   536	   valuable comments and are mentioned without any particular order:
-   537	   Abhishek Kumar, Nikos Triantafillis, Ivan Pepelnjak, Christian
-   538	   Franke, Hannes Gredler, Les Ginsberg, Naiming Shen, Uma Chunduri,
-   539	   Nick Russo, Tony Li, Acee Lindem, Renato Westphal and Rodny Molina.
-   540	
-   541	6.  Normative References
-   542	
-   543	7.  Informative References
-   544	
-   545	   [RFC5120]  Przygienda, T., Shen, N., and N. Sheth, "M-ISIS: Multi
-   546	              Topology (MT) Routing in Intermediate System to
-   547	              Intermediate Systems (IS-ISs)", RFC 5120,
-   548	              DOI 10.17487/RFC5120, February 2008,
-   549	              <https://www.rfc-editor.org/info/rfc5120>.
-   550	
-   551	   [RFC5304]  Li, T. and R. Atkinson, "IS-IS Cryptographic
-   552	              Authentication", RFC 5304, DOI 10.17487/RFC5304, October
-   553	              2008, <https://www.rfc-editor.org/info/rfc5304>.
-   554	
+   533	   IANA is requested to allocate a TBD value in 1-127 range with
+   534	   description of "Modified MANET Reduction" further referring to this
+   535	   document as specification in the "IGP Algorithm Type For Computing
+   536	   Flooding Topology" registry.
+   537	
+   538	5.  Contributors
+   539	
+   540	   The following people have contributed to this draft or provided
+   541	   valuable comments and are mentioned without any particular order:
+   542	   Abhishek Kumar, Nikos Triantafillis, Ivan Pepelnjak, Christian
+   543	   Franke, Hannes Gredler, Les Ginsberg, Naiming Shen, Uma Chunduri,
+   544	   Nick Russo, Tony Li, Acee Lindem, Renato Westphal and Rodny Molina.
+   545	
+   546	6.  Normative References
+   547	
+   548	7.  Informative References
+   549	
+   550	   [RFC5120]  Przygienda, T., Shen, N., and N. Sheth, "M-ISIS: Multi
+   551	              Topology (MT) Routing in Intermediate System to
+   552	              Intermediate Systems (IS-ISs)", RFC 5120,
+   553	              DOI 10.17487/RFC5120, February 2008,
+   554	              <https://www.rfc-editor.org/info/rfc5120>.
    555	
    556	
    557	
    558	
    559	
-   560	White, et al.             Expires 16 July 2026                 [Page 10]
+   560	White, et al.             Expires 26 July 2026                 [Page 10]
    561	
    562	Internet-Draft    IS-IS Distributed Flooding Reduction      January 2026
    563	
    564	
-   565	   [RFC5449]  Baccelli, E., Jacquet, P., Nguyen, D., and T. Clausen,
-   566	              "OSPF Multipoint Relay (MPR) Extension for Ad Hoc
-   567	              Networks", RFC 5449, DOI 10.17487/RFC5449, February 2009,
-   568	              <https://www.rfc-editor.org/info/rfc5449>.
-   569	
-   570	   [RFC5614]  Ogier, R. and P. Spagnolo, "Mobile Ad Hoc Network (MANET)
-   571	              Extension of OSPF Using Connected Dominating Set (CDS)
-   572	              Flooding", RFC 5614, DOI 10.17487/RFC5614, August 2009,
-   573	              <https://www.rfc-editor.org/info/rfc5614>.
-   574	
-   575	   [RFC8126]  Cotton, M., Leiba, B., and T. Narten, "Guidelines for
-   576	              Writing an IANA Considerations Section in RFCs", BCP 26,
-   577	              RFC 8126, DOI 10.17487/RFC8126, June 2017,
-   578	              <https://www.rfc-editor.org/info/rfc8126>.
-   579	
-   580	Appendix A.  Flooding Example
-   581	
-   582	   Assume, in the network specified in example given in Section 1.2.1,
-   583	   that 5A floods some modified LSP towards 4A-4F and we only use a
-   584	   single node to re-flood.  To determine whether 4A should flood this
-   585	   LSP to 3A-3F:
-   586	
-   587	   *  5A is TN; 4A calculates a truncated SPT from 5A's perspective with
-   588	      all link metrics set to 1
-   589	
-   590	   *  4A builds THL, which contains 3A, 3B, 3C, 3D, 3E, 3F, 5B, 5C, 5D,
-   591	      5E and 5F
-   592	
-   593	   *  4A builds RNL, which contains 4A,4B,4C,4D,4E and 4F, sorting it by
-   594	      the system ID
-   595	
-   596	   *  4A computes hash on the received LSP-ID to get N; assume N is 1 in
-   597	      this case
-   598	
-   599	   *  Since 4A is the 1st member of RNL and there are members in THL, 4A
-   600	      must re-flood; the loop exits
-   601	
-   602	Authors' Addresses
-   603	
-   604	   Russ White
-   605	   Akamai
-   606	   Email: russ@riw.us
+   565	   [RFC5304]  Li, T. and R. Atkinson, "IS-IS Cryptographic
+   566	              Authentication", RFC 5304, DOI 10.17487/RFC5304, October
+   567	              2008, <https://www.rfc-editor.org/info/rfc5304>.
+   568	
+   569	   [RFC5449]  Baccelli, E., Jacquet, P., Nguyen, D., and T. Clausen,
+   570	              "OSPF Multipoint Relay (MPR) Extension for Ad Hoc
+   571	              Networks", RFC 5449, DOI 10.17487/RFC5449, February 2009,
+   572	              <https://www.rfc-editor.org/info/rfc5449>.
+   573	
+   574	   [RFC5614]  Ogier, R. and P. Spagnolo, "Mobile Ad Hoc Network (MANET)
+   575	              Extension of OSPF Using Connected Dominating Set (CDS)
+   576	              Flooding", RFC 5614, DOI 10.17487/RFC5614, August 2009,
+   577	              <https://www.rfc-editor.org/info/rfc5614>.
+   578	
+   579	   [RFC8126]  Cotton, M., Leiba, B., and T. Narten, "Guidelines for
+   580	              Writing an IANA Considerations Section in RFCs", BCP 26,
+   581	              RFC 8126, DOI 10.17487/RFC8126, June 2017,
+   582	              <https://www.rfc-editor.org/info/rfc8126>.
+   583	
+   584	Appendix A.  Flooding Example
+   585	
+   586	   Assume, in the network specified in example given in Section 1.2.1,
+   587	   that 5A floods some modified LSP towards 4A-4F and we only use a
+   588	   single node to re-flood.  To determine whether 4A should flood this
+   589	   LSP to 3A-3F:
+   590	
+   591	   *  5A is TN; 4A calculates a truncated SPT from 5A's perspective with
+   592	      all link metrics set to 1
+   593	
+   594	   *  4A builds THL, which contains 3A, 3B, 3C, 3D, 3E, 3F, 5B, 5C, 5D,
+   595	      5E and 5F
+   596	
+   597	   *  4A builds RNL, which contains 4A,4B,4C,4D,4E and 4F, sorting it by
+   598	      the system ID
+   599	
+   600	   *  4A computes hash on the received LSP-ID to get N; assume N is 1 in
+   601	      this case
+   602	
+   603	   *  Since 4A is the 1st member of RNL and there are members in THL, 4A
+   604	      must re-flood; the loop exits
+   605	
+   606	Authors' Addresses
    607	
-   608	
-   609	   Shraddha Hegde
-   610	   Juniper Networks
-   611	   Email: shraddha@juniper.net
+   608	   Russ White
+   609	   Akamai
+   610	   Email: russ@riw.us
+   611	
    612	
    613	
    614	
    615	
-   616	White, et al.             Expires 16 July 2026                 [Page 11]
+   616	White, et al.             Expires 26 July 2026                 [Page 11]
    617	
    618	Internet-Draft    IS-IS Distributed Flooding Reduction      January 2026
    619	
    620	
-   621	   Tony Przygienda
+   621	   Shraddha Hegde
    622	   Juniper Networks
-   623	   Email: prz@juniper.net
+   623	   Email: shraddha@juniper.net
    624	
    625	
-   626	   Luay Jalil
-   627	   Verizon
-   628	   Email: luay.jalil@verizon.com
+   626	   Tony Przygienda
+   627	   Juniper Networks
+   628	   Email: prz@juniper.net
    629	
    630	
-   631	   Daniel Voyer
-   632	   Cisco
-   633	   Email: ?@cisco.com
+   631	   Luay Jalil
+   632	   Verizon
+   633	   Email: luay.jalil@verizon.com
    634	
    635	
-   636	
-   637	
-   638	
+   636	   Daniel Voyer
+   637	   Cisco
+   638	   Email: ?@cisco.com
    639	
    640	
    641	
@@ -669,4 +669,4 @@
    669	
    670	
    671	
-   672	White, et al.             Expires 16 July 2026                 [Page 12]
+   672	White, et al.             Expires 26 July 2026                 [Page 12]

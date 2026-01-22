@@ -302,7 +302,7 @@
                             </t>
                             <ol spacing="normal" type="%i.">
                                 <li>If the IS is the LSP originator, skip</li>
-                                <li>If the IS is a neighbor of the LSP originator, skip</li>
+                                <li>If the IS is a neighbor of the LSP originator, skip </li>
                                 <li>If the IS is on the shortest path from the TN towards the originator of the modified LSP, skip
                                 </li>
                                 <li>If the IS is *not* on the shortest path from the TN towards the originator of the modified LSP, add
@@ -316,8 +316,6 @@
 
                 <t>Step 2: Sort nodes in RNL by system IDs, from the least value to the greatest comparing
                     the node IDs byte wise starting with the "most significant" or "left" byte.</t>
-
-
 
                 <t>Step 3: Shift the fragment number of the received LSP fragment down by 3 bits.
                     The shifting of
@@ -420,6 +418,12 @@
                     flooding MUST NOT try to use optimized flooding distribution.
                 </t>
 
+                <t>
+                    If the arriving LSP is
+                    older than the one held currently in LSDB the receiving node SHOULD set the SRMflag on TN interface
+                    if the interface is on the shortest flooding path from the originator to the receiver of the modified LSP.
+                </t>
+
                 <t> If any such re-synchronizations above a configurable threshold is required (i.e. PSNPs
                             are sent to the neighbors and are answered with requests or CSNPs are indicating significant
                             misses of distributed LSPs),
@@ -432,7 +436,7 @@
 
             <section title="Deployment Considerations" toc="default">
                 <t>
-                    A node deploying this algorithm on point-to-point links MUST send CSNPs on such links. This does not
+                    A node deploying this algorithm on point-to-point links MUST send <em>periodic</em> CSNPs on such links. This does not
                     represent a dramatic change given most deployed implementations today already exhibit this
                     behavior to prevent possible slow synchronization of IS-IS database across such links and to provide
                     additional periodic consistency guarantees.
