@@ -13,7 +13,8 @@
      consensus="true" symRefs="true" sortRefs="true" version="3">
 
     <front>
-    <title>Flooding Reduction Algorithms Framework</title>
+      <title abbrev="IGP Flooding Reduction Algo Framework">
+      IGP Flooding Reduction Algorithms Framework</title>
     <author fullname="Tony Przygienda" initials="T." surname="Przygienda">
       <organization>HPE</organization>
       <address>
@@ -417,19 +418,22 @@
         <xref target="RFC6241"/> or RESTCONF <xref target="RFC8040"/>.
       </t>
       <t>
-          This section defines three YANG modules. Module iana-igp-flooding-algo defines
-          the identities for the IGP flooding reduction algorithm IANA registry <xref target="IANA-IGP-Flooding-Algo"
+          This section defines three YANG modules. Module iana-igp-flooding-topo-algo defines
+          the identities the 'IGP AlgorithmType for Computing Flooding Topology' in the 'Interior
+          Gateway Protocol (IGP) Parameters' registry group. <xref target="IANA-IGP-Flooding-Algo"
           format="default" sectionFormat="of" derivedContent="IANA-IGP-Flooding-Algo"/>.
-          Module ietf-isis-flooding-algo, which augments the IS-IS YANG data model <xref target="RFC9130"/>
-          and the YANG Data Model for Routing Management <xref target="RFC8349"/>, can be used to
-          configure and manage a flooding reduction algorithm in an IS-IS level 1 or level 2 area.
-          Module ietf-ospf-flooding-algo, which augments the OSPF YANG data model <xref target="RFC9129"/>
-          and the YANG Data Model for Routing Management <xref target="RFC8349"/>, can be used to
-          configure and manage a flooding reduction algorithm in an OSPF area.
+          Module ietf-isis-flooding-reduction-algo, which augments the IS-IS YANG data model
+          <xref target="RFC9130"/>  and the YANG Data Model for Routing Management
+          <xref target="RFC8349"/>, can be used to configure and manage a flooding reduction
+          algorithm in an IS-IS level 1 or level 2 area.
+          Module ietf-ospf-flooding-reduction-algo, which augments the OSPF YANG data model
+          <xref target="RFC9129"/> and the YANG Data Model for Routing Management
+          <xref target="RFC8349"/>, can be used to configure and manage a flooding reduction algorithm
+          in an OSPF area.
       </t>
       <t>This document uses the graphical representation of data model per <xref target="RFC8340"/>.</t>
-      <section title="Tree for IS-IS Flooding Algorithm">
-       <t>The following shows the tree diagram of the module for an IS-IS Flooding Algorithm:</t>
+      <section title="Tree for IS-IS Flooding Reduction Algorithm">
+       <t>The following shows the tree diagram of the module for an IS-IS Flooding Reduction Algorithm:</t>
        <artwork align="left" name="" type="" alt=""><![CDATA[
   augment /rt:routing/rt:control-plane-protocols
             /rt:control-plane-protocol/isis:isis:
@@ -442,12 +446,12 @@
   augment /rt:routing/rt:control-plane-protocols
             /rt:control-plane-protocol/isis:isis/isis:database
             /isis:levels/isis:lsp/isis:router-capabilities:
-    +--ro router-flooding-algo-tlv
-       +--ro active-flooding-algo?   identityref
+    +--ro flooding-reduction-algo-tlv
+       +--ro flooding-reduction-algo?   identityref
        ]]></artwork>
       </section>
-      <section title="Tree for OSPF Flooding Algorithm">
-       <t>The following shows the tree diagram of the module for an OSPF Flooding Algorithm:</t>
+      <section title="Tree for OSPF Flooding Reduction Algorithm">
+       <t>The following shows the tree diagram of the module for an OSPF Flooding Reduction Algorithm:</t>
        <artwork align="left" name="" type="" alt=""><![CDATA[
   augment /rt:routing/rt:control-plane-protocols
             /rt:control-plane-protocol/ospf:ospf/ospf:areas
@@ -460,36 +464,39 @@
             /ospf:area-scope-lsas/ospf:area-scope-lsa/ospf:version
             /ospf:ospfv2/ospf:ospfv2/ospf:body/ospf:opaque
             /ospf:ri-opaque:
-    +--ro router-flooding-algo-tlv
-       +--ro active-flooding-algo?   identityref
+    +--ro flooding-reduction-algo-tlv
+       +--ro flooding-reduction-algo?   identityref
   augment /rt:routing/rt:control-plane-protocols
             /rt:control-plane-protocol/ospf:ospf/ospf:areas
-            /ospf:area/ospf:interfaces/ospf:interface
-            /ospf:database/ospf:link-scope-lsa-type
-            /ospf:link-scope-lsas/ospf:link-scope-lsa/ospf:version
+            /ospf:area/ospf:database/ospf:area-scope-lsa-type
+            /ospf:area-scope-lsas/ospf:area-scope-lsa/ospf:version
             /ospf:ospfv3/ospf:ospfv3/ospf:body
             /ospf:router-information:
-    +--ro router-flooding-algo-tlv
-       +--ro active-flooding-algo?   identityref
-
+    +--ro flooding-reduction-algo-tlv
+       +--ro flooding-reduction-algo?   identityref
        ]]></artwork>
       </section>
       <section title="IANA Module for IGP Flooding Algorithms">
-          <t>IANA has created a registry titled "IGP Flooding Algorithm"
-             Module iana-igp-flooding-algorithms
-             is an IANA-maintained module, which defines the identities for the IGP flooding algorithms
-             as in the IANA "IGP Flooding Algorithms" registry.</t>
+        <t>
+          IANA has created a registry titled 'IGP Algorithm
+          Type for Computing Flooding Topology' in the 'Interior
+          Gateway Protocol (IGP) Parameters' registry group.";
+          Module iana-igp-flooding-topo-algo
+          is an IANA-maintained module, which defines the identities for the IGP algorithms for
+          computing flooding topologies as in the IANA "IGP Algorithm Type for Computing Flooding
+          Topology" registry.
+        </t>
           <t>This module is maintained by IANA and will be updated if and when there is any change to the registry.</t>
           <t>This document defines the initial version of the IANA-maintained YANG
-             module for OSPF Router Functional Capabilities that mirrors the IANA "OSPF Router Functional Capability Bits"
+             module for the  "IGP Algorithm Type for Computing Flooding Topology" registry.
              registry <xref target="IANA-IGP-Flooding-Algo" format="default" sectionFormat="of"
              derivedContent="IANA-IGP-Flooding-Algo"/>.
           </t>
-          <sourcecode name="iana-igp-flooding-algo@2026-02-10.yang" type="" markers="true"><![CDATA[
-module iana-igp-flooding-algo {
+          <sourcecode name="iana-igp-flooding-topo-algo@2026-02-10.yang" type="" markers="true"><![CDATA[
+module iana-igp-flooding-topo-algo {
   yang-version 1.1;
   namespace "urn:ietf:params:xml:ns:yang:"
-          + "iana-igp-flooding-algo";
+          + "iana-igp-flooding-topo-algo";
   prefix iana-igp-flood-algo;
 
   organization
@@ -505,11 +512,11 @@ module iana-igp-flooding-algo {
      Tel:    +1 310 301 5800
      <mailto:iana@iana.org>";
   description
-    "This YANG module defines the identities for IGP Flooding
-     reduction algorithms.
+    "This YANG module defines the identities for IGP Algorithms
+     for Computing Flooding Topologies.
 
-     This YANG module is maintained by IANA and reflects the 'Active
-     Active Flood Reduction Algorithm' registry.
+     This YANG module is maintained by IANA and reflects the
+     'IGP Flooding Reduction Algorithm' registry.
 
      Copyright (c) 2026 IETF Trust and the persons identified as
      authors of the code.  All rights reserved.
@@ -536,27 +543,29 @@ module iana-igp-flooding-algo {
     description
       "Initial version";
     reference
-      "RFC XXXX: Flooding Reduction Algorithms Framework";
+      "RFC 9667: Dynamic Flooding on Dense Graphs";
   }
 
-  identity flooding-reduction-algo {
+  identity igp-flooding-topo-algo {
     description
-      "Base identity for IGP flooding reduction algorithms.
-       Algorithms are defined in the Active Flooding Reduction
-       Algorithm registry.";
+      "Base identity for IGP algorithms for computing flooding
+       topologies. Algorithms are defined in the 'IGP Algorithm
+       Type for Computing Flooding Topology' in the 'Interior
+       Gateway Protocol (IGP) Parameters' registry group.";
   }
 }
-
           ]]></sourcecode>
       </section>
-      <section title="YANG Module for IS-IS Flooding Algorithm">
-          <t>The following is the YANG module for IS-IS Flooding Algorithm:</t>
-          <sourcecode name="ietf-isis-flooding-algo@2026-02-10.yang" type="" markers="true"><![CDATA[
-module ietf-isis-flooding-algo {
+      <section title="YANG Module for IS-IS Flooding Reduction Algorithm">
+        <t>
+          The following is the YANG module for IS-IS Flooding Reduction Algorithm:
+        </t>
+        <sourcecode name="ietf-isis-flooding-reduction-algo@2026-02-10.yang" type="" markers="true"><![CDATA[
+module ietf-isis-flooding-reduction-algo {
   yang-version 1.1;
   namespace "urn:ietf:params:xml:ns:yang:"
-          + "ietf-isis-flooding-algo";
-  prefix isis-flood-algo;
+          + "ietf-isis-flooding-reduction-algo";
+  prefix isis-flood-reduce-algo;
 
   import ietf-routing {
     prefix rt;
@@ -569,10 +578,10 @@ module ietf-isis-flooding-algo {
     reference
       "RFC 9130: YANG Data Model for the IS-IS Protocol";
   }
-  import iana-igp-flooding-algo {
-    prefix iana-igp-flooding-algo;
+  import iana-igp-flooding-topo-algo {
+    prefix iana-igp-flood-algo;
     reference
-      "RFC XXXX: Flooding Reduction Algorithms Framework";
+      "RFC 9667: Dynamic Flooding on Dense Graphs";
   }
 
   organization
@@ -608,12 +617,13 @@ module ietf-isis-flooding-algo {
     description
       "Initial version";
     reference
-      "RFC XXXX: Flooding Reduction Algorithms Framework";
+      "RFC XXXX: IGP Flooding Reduction Algorithms Framework";
   }
 
   /*
    * IS-IS Flooding Reduction Algorithm configuration
    */
+
   grouping flooding-reduction-algo-config {
     description
       "Grouping for IS-IS flooding algorithm router
@@ -625,17 +635,17 @@ module ietf-isis-flooding-algo {
          active flooding reduction algorithm.";
       leaf flooding-reduction-algo {
         type identityref {
-          base iana-igp-flooding-algo:flooding-reduction-algo;
-         }
+          base iana-igp-flood-algo:igp-flooding-topo-algo;
+        }
         description
           "Specifies the active flooding reduction algorithm
            in for IS-IS Level 1.
-           RFC XXXX: Flooding Reduction Algorithms Framework";
-        }
-     }
+           RFC XXXX: IGP Flooding Reduction Algorithms Framework";
+      }
+    }
   }
 
- augment "/rt:routing/"
+  augment "/rt:routing/"
         + "rt:control-plane-protocols/rt:control-plane-protocol"
         + "/isis:isis" {
     when "/rt:routing/rt:control-plane-protocols/"
@@ -663,25 +673,25 @@ module ietf-isis-flooding-algo {
   /*
    * IS-IS Flooding Reduction Algorithm Router Capabilities
    */
-  grouping router-flooding-algorithm-tlv {
+
+  grouping flooding-reduction-algorithm-tlv {
     description
-      "Grouping for IS-IS router flooding algorithm capabilities
+      "Grouping for IS-IS flooding reduction algorithm
        TLV types.";
     reference
       "RFC 7981: IS-IS Extensions for Advertising Router
                  Information
        RFC XXXX: Flooding Reduction Algorithms Framework";
-
-    container router-flooding-algo-tlv {
+    container flooding-reduction-algo-tlv {
       description
         "IS-IS Router Flooding Algorithm TLV.";
-      leaf active-flooding-algo {
+      leaf flooding-reduction-algo {
         type identityref {
-          base iana-igp-flooding-algo:flooding-reduction-algo;
+          base iana-igp-flood-algo:igp-flooding-topo-algo;
         }
         description
           "Flooding reduction algorithm active in the
-          IS-IS routing domain";
+           IS-IS routing domain";
         reference
           "RFC 7981: IS-IS Extensions for Advertising Router
                      Information
@@ -689,6 +699,7 @@ module ietf-isis-flooding-algo {
       }
     }
   }
+
   augment "/rt:routing/"
         + "rt:control-plane-protocols/rt:control-plane-protocol"
         + "/isis:isis/isis:database/isis:levels/isis:lsp"
@@ -701,18 +712,18 @@ module ietf-isis-flooding-algo {
     }
     description
       "This augments IS-IS protocol LSDB router capability.";
-    uses router-flooding-algorithm-tlv;
+    uses flooding-reduction-algorithm-tlv;
   }
 }
           ]]></sourcecode>
       </section>
-      <section title="YANG Module for OSPF Flooding Algorithm">
-          <t>The following is the YANG module for OSPF Flooding Algorithm:</t>
-          <sourcecode name="ietf-ospf-flooding-algo@2026-02-10.yang" type="" markers="true"><![CDATA[
-module ietf-ospf-flooding-algo {
+      <section title="YANG Module for OSPF Flooding Reduction Algorithm">
+          <t>The following is the YANG module for OSPF Flooding Reduction Algorithm:</t>
+          <sourcecode name="ietf-ospf-flooding-reduction-algo@2026-02-10.yang" type="" markers="true"><![CDATA[
+module ietf-ospf-flooding-reduction-algo {
   yang-version 1.1;
   namespace "urn:ietf:params:xml:ns:yang:"
-          + "ietf-ospf-flooding-algo";
+          + "ietf-ospf-flooding-reduction-algo";
   prefix ospf-fc;
 
   import ietf-routing {
@@ -726,10 +737,10 @@ module ietf-ospf-flooding-algo {
     reference
       "RFC 9129: YANG Data Model for the OSPF Protocol";
   }
-  import iana-igp-flooding-algo {
-    prefix iana-igp-flooding-algo;
+  import iana-igp-flooding-topo-algo {
+    prefix iana-igp-flood-algo;
     reference
-      "RFC XXXX: Flooding Reduction Algorithms Framework";
+      "RFC 9667: Dynamic Flooding on Dense Graphs";
   }
 
   organization
@@ -741,9 +752,9 @@ module ietf-ospf-flooding-algo {
      Author:   Acee Lindem
                <mailto:acee.ietf@gmail.com>";
   description
-    "This YANG module defines the operational state for
-     the flooding reduction algorithm  in OSPF as defined
-     in RFC XXXX.
+    "This YANG module defines the configuration and operational
+     state for the flooding reduction algorithms in OSPF as
+     defined in RFC XXXX.
 
      Copyright (c) 2026 IETF Trust and the persons identified as
      authors of the code.  All rights reserved.
@@ -765,30 +776,28 @@ module ietf-ospf-flooding-algo {
     description
       "Initial version";
     reference
-      "RFC XXXX: Flooding Reduction Algorithms Framework";
+      "RFC XXXX: IGP Flooding Reduction Algorithms Framework";
   }
 
-  grouping router-flooding-algorithm-tlv {
+  grouping flooding-reduction-algorithm-tlv {
     description
-      "Grouping for OSPF router flooding algorithm capabilities
+      "Grouping for OSPF flooding algorithm capabilities
        TLV types.";
     reference
       "RFC 7770: Extensions to OSPF for Advertising Optional
                  Router Capabilities
-       RFC XXXX: Flooding Reduction Algorithms Framework";
-
-
-  container router-flooding-algo-tlv {
-    description
-      "OSPF Router Flooding Algorithm TLV.";
-    leaf active-flooding-algo {
-      type identityref {
-        base iana-igp-flooding-algo:flooding-reduction-algo;
-       }
-       description
-         "Flooding reduction algorithm active in the
-          OSPF routing domain
-          RFC XXXX: Flooding Reduction Algorithms Framework";
+       RFC XXXX: IGP Flooding Reduction Algorithms Framework";
+    container flooding-reduction-algo-tlv {
+      description
+        "OSPF Flooding Reduction Algorithm TLV.";
+      leaf flooding-reduction-algo {
+        type identityref {
+          base iana-igp-flood-algo:igp-flooding-topo-algo;
+        }
+        description
+          "Flooding reduction algorithm active in the
+           OSPF routing domain area
+           RFC XXXX: Flooding Reduction Algorithms Framework";
       }
     }
   }
@@ -796,6 +805,7 @@ module ietf-ospf-flooding-algo {
   /*
    * OSPF Flooding Reduciton Algorithm Configuration
    */
+
   augment "/rt:routing/rt:control-plane-protocols/"
         + "rt:control-plane-protocol/ospf:ospf/"
         + "ospf:areas/ospf:area" {
@@ -808,29 +818,29 @@ module ietf-ospf-flooding-algo {
     }
     container flooding-reduction-algo {
       description
-        "OSPF area level flooding algorithm routing configuration.
-         This containers includes configuration related to the the
-         active flooding reduction algorithm.";
+        "OSPF area-level flooding reduction algorithm routing
+         configuration. This container includes configuration related
+         to the the active flooding reduction algorithm.";
       leaf flooding-reduction-algo {
         type identityref {
-          base iana-igp-flooding-algo:flooding-reduction-algo;
-         }
+          base iana-igp-flood-algo:igp-flooding-topo-algo;
+        }
         description
           "Specifies the active flooding reduction algorithm
            in the OSPF area.
-           RFC XXXX: Flooding Reduction Algorithms Framework";
-        }
-     }
-
+           RFC XXXX: IGP Flooding Reduction Algorithms Framework";
+      }
+    }
     description
       "This augments the OSPF protocol area configuration with
        flood reduction algorithm specification.";
-   }
+  }
 
   /*
    * OSPFv2 Router-Information Opaque LSA Flooding Reduction TLV
    */
-   augment "/rt:routing/"
+
+  augment "/rt:routing/"
         + "rt:control-plane-protocols/rt:control-plane-protocol/"
         + "ospf:ospf/ospf:areas/"
         + "ospf:area/ospf:database/"
@@ -847,21 +857,23 @@ module ietf-ospf-flooding-algo {
     description
       "OSPFv2 Opaque Area-Scoped Router-Information LSA Router
        Functional capabilities.";
-    uses router-flooding-algorithm-tlv;
+    uses flooding-reduction-algorithm-tlv;
     reference
       "RFC 7770: Extensions to OSPF for Advertising Optional
-                 Router Capabilities";
+                 Router Capabilities
+       RFC XXXX: IGP Flooding Reduction Algorithms Framework";
   }
 
   /*
    * OSPFv3 Router-Information LSA Flooding Reduction TLV
    */
+
   augment "/rt:routing/"
         + "rt:control-plane-protocols/rt:control-plane-protocol/"
-        + "ospf:ospf/ospf:areas/ospf:area/"
-        + "ospf:interfaces/ospf:interface/ospf:database/"
-        + "ospf:link-scope-lsa-type/ospf:link-scope-lsas/"
-        + "ospf:link-scope-lsa/ospf:version/ospf:ospfv3/"
+        + "ospf:ospf/ospf:areas/"
+        + "ospf:area/ospf:database/"
+        + "ospf:area-scope-lsa-type/ospf:area-scope-lsas/"
+        + "ospf:area-scope-lsa/ospf:version/ospf:ospfv3/"
         + "ospf:ospfv3/ospf:body/ospf:router-information" {
     when "derived-from-or-self(/rt:routing/"
        + "rt:control-plane-protocols/"
@@ -870,45 +882,32 @@ module ietf-ospf-flooding-algo {
         "This augmentation is only valid for OSPFv3.";
     }
     description
-      "OSPFv3 Link-Scoped Router-Information LSA Router
+      "OSPFv3 Area-Scoped Router-Information LSA Router
        Functional capabilities.";
-    uses router-flooding-algorithm-tlv;
+    uses flooding-reduction-algorithm-tlv;
     reference
       "RFC 7770: Extensions to OSPF for Advertising Optional
                  Router Capabilities
-       RFC XXXX: Flooding Reduction Algorithms Framework";
+       RFC XXXX: IGP Flooding Reduction Algorithms Framework";
   }
 }
-]]></sourcecode>
+      ]]></sourcecode>
       </section>
     </section>
 
     <section title="IANA Considerations" toc="default" anchor="IANA">
         <section anchor="IANA-IGP-Flooding-Algo" title="IANA IGP Flooding Algorithm Registry">
-          <t>IANA is requested to create a registry called "IGP Flooding Algorithm" under the existing "Interior Gateway
-          Protocol (IGP) Parameters" IANA registry.</t>
           <t>
-            Values in this registry come from the range 0 - 2^16-1.
-          </t>
-          <t>
-            The following values are defined:
-          </t>
-          <ul>
-            <li>
-              0 - 127: Standardized algorithms assigned in the registry.
-            </li>
-            <li>
-              128 - 254: Reserved for experimental purposes.
-            </li>
-            <li>
-              255: Reserved.
-            </li>
-          </ul>
+            The existing IANA registry "IGP Algorithm Type for Computing Flooding Topology"
+            in the "Interior Gateway Protocol (IGP) Parameters" registry
+            group <xref target="RFC9667"/> is reused for algorithm definitions in this document.
+            No further IANA action is required.
+          </t>  
         </section>
-        <section anchor="IGP-Flooding-Algo" title="IGP Flooding Algorithm Capabiity">
+        <section anchor="IGP-Flooding-Algo" title="IGP Flooding Reduction Algorithm Capabiity">
         <t>
           This section requests that IANA reserve a single value from each of the following registries.
-          Both should be named: "Active Flood Reduction Algorithm".
+          Both should be named: "Flood Reduction Algorithm".
         </t>
         <ul>
           <li>

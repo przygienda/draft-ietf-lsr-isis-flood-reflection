@@ -1,7 +1,7 @@
-module iana-igp-flooding-algo {
+module iana-igp-flooding-topo-algo {
   yang-version 1.1;
   namespace "urn:ietf:params:xml:ns:yang:"
-          + "iana-igp-flooding-algo";
+          + "iana-igp-flooding-topo-algo";
   prefix iana-igp-flood-algo;
 
   organization
@@ -17,11 +17,11 @@ module iana-igp-flooding-algo {
      Tel:    +1 310 301 5800
      <mailto:iana@iana.org>";
   description
-    "This YANG module defines the identities for IGP Flooding
-     reduction algorithms.
+    "This YANG module defines the identities for IGP Algorithms
+     for Computing Flooding Topologies.
 
-     This YANG module is maintained by IANA and reflects the 'Active
-     Active Flood Reduction Algorithm' registry.
+     This YANG module is maintained by IANA and reflects the
+     'IGP Flooding Reduction Algorithm' registry.
 
      Copyright (c) 2026 IETF Trust and the persons identified as
      authors of the code.  All rights reserved.
@@ -48,13 +48,14 @@ module iana-igp-flooding-algo {
     description
       "Initial version";
     reference
-      "RFC XXXX: Flooding Reduction Algorithms Framework";
+      "RFC 9667: Dynamic Flooding on Dense Graphs";
   }
 
-  identity flooding-reduction-algo {
+  identity igp-flooding-topo-algo {
     description
-      "Base identity for IGP flooding reduction algorithms. 
-       Algorithms are defined in the Active Flooding Reduction
-       Algorithm registry.";
+      "Base identity for IGP algorithms for computing flooding
+       topologies. Algorithms are defined in the 'IGP Algorithm
+       Type for Computing Flooding Topology' in the 'Interior
+       Gateway Protocol (IGP) Parameters' registry group.";
   }
 }
