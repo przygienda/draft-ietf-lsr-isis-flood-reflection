@@ -341,8 +341,8 @@
                 <t>Nodes are REQUIRED to signal when they are actively running any pruner (except a non-pruner). The absence of
                     such an advertisement indicates that a node is either running a non-pruner or some other algorithm where within
                     its component it behaves in an equivalent fashion while also guaranteeing flooding on links connected to other components.</t>
-                <section title="IS-IS - Active Flood Reduction Algorithm Sub-TLV">
-                    <t>The Active Flood Reduction Algorithm Sub-TLV is advertised as a sub-TLV within a Router Capability TLV (242) defined in <xref target="RFC7981"/>.
+                <section title="IS-IS - Flood Reduction Algorithm Sub-TLV">
+                    <t>The Flood Reduction Algorithm Sub-TLV is advertised as a sub-TLV within a Router Capability TLV (242) defined in <xref target="RFC7981"/>.
                         It uses the following format:</t>
 
                     <figure align="left">
@@ -362,13 +362,13 @@
                             the "IGP Algorithm Type For Computing Flooding Topology" registry.
                         </li>
                     </ul>
-                    <t>This sub-TLV MUST only contain the current active running pruner (other than a non-pruner). It MUST be flooded within
+                    <t>This sub-TLV MUST only contain the currently active running pruner (other than a non-pruner). It MUST be flooded within
                         a Router Capability TLV that is strictly area-scoped and MUST NOT be leaked between levels.
                     </t>
                 </section>
 
-                <section title="OSPFv2/OSPFv3 - Active Flood Reduction Algorithm TLV">
-                  <t>The Active Flood Reduction Algorithm TLV is advertised within a OSPFv2 Router Information (RI)
+                <section title="OSPFv2/OSPFv3 - Flood Reduction Algorithm TLV">
+                  <t>The Flood Reduction Algorithm TLV is advertised within a OSPFv2 Router Information (RI)
                      Opaque LSA or OSPFv3 Router Information LSA as defined in <xref target="RFC7770"/>.
                         It uses the following format:</t>
 
@@ -631,7 +631,7 @@ module ietf-isis-flooding-reduction-algo {
     container flooding-reduction-algo {
       description
         "IS-IS Level-1 flooding algorithm routing configuration.
-         This containers includes configuration related to the the
+         This containers includes configuration related to the
          active flooding reduction algorithm.";
       leaf flooding-reduction-algo {
         type identityref {
@@ -820,7 +820,7 @@ module ietf-ospf-flooding-reduction-algo {
       description
         "OSPF area-level flooding reduction algorithm routing
          configuration. This container includes configuration related
-         to the the active flooding reduction algorithm.";
+         to the active flooding reduction algorithm.";
       leaf flooding-reduction-algo {
         type identityref {
           base iana-igp-flood-algo:igp-flooding-topo-algo;
