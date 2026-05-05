@@ -10,13 +10,13 @@
 <?rfc sortrefs="yes" ?>
 <?rfc compact="yes" ?>
 <?rfc subcompact="no" ?>
-<rfc xmlns:xi="http://www.w3.org/2001/XInclude" category="std" docName="draft-rigatoni-lsr-isis-fragment-timestamping-03" ipr="trust200902" obsoletes="" updates="" submissionType="IETF" xml:lang="en" tocInclude="true" tocDepth="3" symRefs="true" sortRefs="true" version="3">
+<rfc xmlns:xi="http://www.w3.org/2001/XInclude" category="std" docName="draft-rigatoni-lsr-isis-fragment-timestamping-04" ipr="trust200902" obsoletes="" updates="" submissionType="IETF" xml:lang="en" tocInclude="true" tocDepth="3" symRefs="true" sortRefs="true" version="3">
 
     <!-- ***** FRONT MATTER ***** -->
 
     <front>
 
-        <title>Optional IS-IS Fragment Timestamping and Database Fingerprint</title>
+        <title>Optional IS-IS Packet Timestamping and Database Fingerprint</title>
 
         <author initials='T.' surname='Przygienda' fullname='Tony Przygienda'>
             <organization>HPE Juniper Networking</organization>
@@ -31,6 +31,14 @@
                 <email>colby.barth@hpe.com</email>
             </address>
         </author>
+
+        <author initials='T.' surname='Li' fullname='Tony Li'>
+            <organization>HPE Juniper Networking</organization>
+            <address>
+                <email>anthony.li@hpe.com</email>
+            </address>
+        </author>
+
 
         <author initials='R.' surname='Westphal' fullname='Renato Westphal'>
             <organization>NetDEF</organization>
@@ -54,6 +62,7 @@
                 This document describes extensions
                 to ISIS supporting distribution of fragment origination time.  The origination time can be used to aid
                 troubleshooting and/or by the applications themselves to improve their behavior.
+                Timestamping can be also used to detect replay attack which are not addressed in IS-IS currently.
                 Additionally, a mechanism is proposed by which the consistency of databases on all routers in
                 the network can be easily verified and a rough metric of diffusion behavior derived.
 
@@ -68,13 +77,16 @@
 
         <section title="Introduction" anchor="intro">
             <t>
-                Many applications in today’s networks rely on reliable and timely flooding of link-state information, such as,
+                Many applications in today’s networks rely on safe, reliable and timely flooding of link-state information, such as,
                 but not limited to Traffic Engineered networks and advanced telemetry solutions.  If such information is delayed during
                 flooding it can be difficult for those
                 applications to adequately fulfill their intended purpose.  This document describes extensions to ISIS allowing it
-                to carry the origination time on each fragment.
+                to carry the origination time on each packet.
                 The origination time can be used to aid troubleshooting of large domains and/or by the applications themselves
-                to improve their behavior.
+                to improve their behavior. Further, the addition of timestamps into IS-IS packets allows to address replay
+                attacks. Thus, IIHs
+                can carry optional timestamps and LSPs will additionally contain in the timestamp the original
+                lifetime used when originating the fragment in question.
             </t>
             <t>
 
@@ -98,35 +110,50 @@
             </t>
 
             <t>
-                In a similar vein it is important in large networks when they are in a stable state to measure
+                As a second application, attackers attempting to replay previously recorded authenticated exchanges
+                between nodes will be dwarfed by the timestamping mechanism refusing to accept packets failing the
+                required sanity checks.
+            </t>
+
+            <t>
+                Ultimately, it is important in large networks when they are in a stable state to observe
                 whether all databases have synchronized properly and derive the delays involved in the propagation
                 of information across the network. This document proposes an extension to the yang schema that allows
                 easy access to such information.
             </t>
-
-
         </section>
 
         <section title="Timestamp TLV" anchor="tlvs">
-            <t>This section defines a new, optional TLV that can be present in any fragment. In case of multiple
-                instances of the TLV in a fragment only the first occurrence MUST be used. The semantics of the TLV is the point in time the
-                fragment with the current sequence number has been generated. Its absence signifies that such
+            <t>This section defines a new, optional TLV that can be present in any ISIS packet. In case of multiple
+                instances of the TLV in a packet only the first occurrence MUST be used.
+                Its absence signifies that such
                 information is not available due to host of possible issues, one of them lack of clock
-                with synchronization precise enough. </t>
+                with synchronization precise enough.
+                </t>
             <t>
+                When added to a SNP or IIH packet, this TLV carries the origination time of the information.
+                </t>
+
+            <t>
+                When contained in a fragment it indicates the point in time the
+                fragment with the current sequence number has been generated and carries the original lifetime used.
+                </t>
+
+            <t>
+
                 For practical purposes, although desirable, timestamping the moment a fragment is flooded
                 would be preferable but beside practical implementation problems this could generate on different
                 interfaces the same fragment with different content which breaks one of the fundamental
                 tenants of link-state protocols. However, an implementation is free to choose to use, e.g. the moment
                 the fragment is queued for flooding first time rather than the time the version is generated.
             </t>
+
             <t>To save space the timestamp is following semantically NTP seconds epoch <xref target="RFC5905"/> with the exception of
                 an extra bit in the seconds field to extend the wrap around and
                 carrying only 2^-8 of a second as maximum resolution of the timestamp since this is considered
                 sufficient for link-state purposes. The specification follows further guidelines of <xref target="RFC8877"/>
                 as far as possible.
             </t>
-
 
             <figure align="left">
                 <artwork align="left" type="ascii-art"><![CDATA[
@@ -139,6 +166,8 @@
   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
   |H|     Frac      |    Prec     |
   +-+-+-+-+-+-+-+-+---------------+
+  |     Originating Lifetime      |
+  +-------------------------------+
 
   ]]></artwork>
             </figure>
@@ -146,11 +175,13 @@
             <ul>
                 <li>Type: TBD1</li>
 
-                <li>Length: ...</li>
+                <li>Length: Indicates the length of content and allows to deduce whether the originating lifetime
+                is contained in it or not. A length of 6 contains only the timestamp while a length of 8 indicates
+                that originating lifetime is included.</li>
 
                 <li>Seconds: 4 bytes of number of seconds since the NTP <xref target="RFC5905"/> epoch.</li>
                 <li>H(-Bit): 1 bit. Extra high order bit is used to prevent wrap-around in 2036 and pushes it out to 2242. The offset can be constructed
-                    in network order `HB` shifted to left without overflow by 32 bits and the `Seconds` field OR'ed into the according value.</li>
+                    in network order as 33rd bit of a 64 bits value and the `Seconds` field OR'ed into the lower order bits of the according value.</li>
                 <li>Fraction: 8-bits of fraction of the second in units of 2^-8 which is  equivalent
                     to 1/256 of a second or roughly 4 msecs resolution. </li>
                 <li>Precision: 7 bits indicating the maximum possible slip (either in future or past)
@@ -159,8 +190,84 @@
                     protocol) as 2^Precision where at minimum of the range signifies 2 msec or better precision
                     and the maximum of the range amounts to 256 msec precision or less. A node that cannot achieve
                     this minimum precision required SHOULD NOT advertise the fragment timestamp.</li>
+                <li>
+                    Originating Lifetime: It SHOULD only be present in fragments and indicates the value of the LSP remaining lifetime
+                    field when the LSP was originated. If present in any other packet than an LSP it MUST be ignored.
+
+                </li>
             </ul>
 
+        </section>
+
+        <section title="Replay Attack Protection" anchor="replay">
+            <t>To begin the discussion in this chapter the interval [ indicated precision in the packet + local precision ] multiplied
+                by a small constant is denoted by small delta or |S.
+                Since LSP lifetime resolution is relatively coarse [ indicated precision in the packet + local precision ] multiplied
+                by a larger constant is denoted by large delta or |D. For practical purposes |D is likely to span several seconds.
+            </t>
+            <t>When timestamped, packets can be protected against replay attacks. For SNP and IIH packets,
+                packets deviating more than |S when compared to the local clock SHOULD be dropped.
+
+            </t>
+            <t>
+            When timestamped, LSPs packets that provide a timestamp triggering any of the criteria
+            </t>
+            <ul>
+                <li>
+                    originating timestamp + originating lifetime less than |D from current local time
+                </li>
+                <li>
+                    LSP lifetime more than originating lifetime
+                </li>
+                <li>
+                    originating timestamp + LSP lifetime deviating more than |D from current local time
+                </li>
+                <li>
+                    originating timestamp smaller than the last timestamp seen on this interface.
+                </li>
+            </ul>
+            <t>
+                should not be accepted.
+            </t>
+            <t>
+                The last condition allows for sending packets with the same timestamp within a small window
+                of time.
+                Attempts to tighten this further would limit the maximum rates of packet issuance given the
+                timestamp resolution and impose further very strict packet queuing limitations. An attempted
+                replay attack
+                within this window is detectable by arrival of excessive amount of identical IIH or SNP packets
+                within a small window of time and should be tracked and reported.
+            </t>
+            <t>
+                Packets arriving on the wire should undergo timestamp sanity checking as soon as possible after
+                being cryptographically authenticated.
+            </t>
+            <t>
+                Puring presents a particularly difficult problem since <xref target="RFC6232"/> mandates the
+                acceptable TLVs in a purge and timestamping is currently not part of those TLVs. Due to this
+                precondition, a change in
+                standard is needed and timestamping on purging can only be originated after upgrade of the whole domain.
+                Additionally,
+                purges carry a lifetime of 0 which defeats the timestamp criteria as defined above. As such,
+                purges timestamps will not carry the originating lifetime in their timestamp. Purges that trigger any of
+                the criteria
+            </t>
+                <ul>
+                    <li>
+                        originating timestamp + |D in the future compared to current local time
+                    </li>
+                    <li>
+                        originating timestamp less or equal to the timestamp seen on the last purge for this LSP
+                    </li>
+                </ul>
+            <t>
+                should be discarded.
+            </t>
+
+            <t>
+                The timestamp field MUST NOT be used for replay attack protection if the packet is not
+                authenticated by cryptographic signature or hash.
+            </t>
         </section>
 
 
@@ -181,9 +288,19 @@
                 maximum incurred flooding delays between any pair of nodes, it should not be used in any attempts to
                 modify the behavior of protocol behavior itself such as e.g. influencing flooding rates. A single
                 badly synchronized clock could otherwise change the behavior of parts or even the whole network in
-                unpredictable or even detrimental way.
-
+                unpredictable or even detrimental way. Replay protection as defined in <xref target="replay"/>
+                is an exception.
             </t>
+        </section>
+
+        <section title="Security Considerations">
+            <t>For practical reasons, the timestamping replay protection defined in this document relies on different mechanisms than negotiation
+                and repetition of nonces. It preconditions clock synchronization across nodes and hence presents
+                an attack vector where the necessary clock mechanisms can be compromised if vulnerable. The attack
+                windows and vectors are otherwise comparable due to the nature of IGPs which do not rely on lossless
+                communication channels.
+            </t>
+
         </section>
 
         <section title="Yang Extensions for Database Fingerprint">
@@ -365,6 +482,8 @@ module ietf-isis-fragment-timestamping {
 
         <references title="Normative References">
 
+
+                <xi:include href='https://xml2rfc.tools.ietf.org/public/rfc/bibxml/reference.RFC.6232.xml'/>
 
             <!--
             <reference anchor="ISO10589">
