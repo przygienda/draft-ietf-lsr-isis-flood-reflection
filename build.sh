@@ -41,6 +41,7 @@ do
   xml2rfc --allow-local-file-access --text $D.xml
   xml2rfc --allow-local-file-access --html $D.xml
   xml2rfc --allow-local-file-access --expand $D.xml
+  xml2rfc --legacy --allow-local-file-access --text --raw $D.xml
   # echo 'sed\ing stroke none'
   # sed -i 's/stroke="none"//g' $D.exp.xml
 

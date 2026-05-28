@@ -111,12 +111,12 @@
 
             <t>
                 As a second application, attackers attempting to replay previously recorded authenticated exchanges
-                between nodes will be dwarfed by the timestamping mechanism refusing to accept packets failing the
+                between nodes will be deflected by the timestamping mechanism refusing to accept packets failing the
                 required sanity checks.
             </t>
 
             <t>
-                Ultimately, it is important in large networks when they are in a stable state to observe
+                Ultimately, it is useful in large networks when they are in a stable state to observe
                 whether all databases have synchronized properly and derive the delays involved in the propagation
                 of information across the network. This document proposes an extension to the yang schema that allows
                 easy access to such information.
@@ -200,37 +200,50 @@
         </section>
 
         <section title="Replay Attack Protection" anchor="replay">
-            <t>To begin the discussion in this chapter the interval [ indicated precision in the packet + local precision ] multiplied
-                by a small constant is denoted by small delta or |S.
-                Since LSP lifetime resolution is relatively coarse [ indicated precision in the packet + local precision ] multiplied
-                by a larger constant is denoted by large delta or |D. For practical purposes |D is likely to span several seconds.
+
+            <t>
+                The timestamp field MUST NOT be used for replay attack protection if the packet is not
+                authenticated by cryptographic signature or hash. Further considerations are outlined in
+                <xref target="security"/>.
             </t>
-            <t>When timestamped, packets can be protected against replay attacks. For SNP and IIH packets,
+            <t>To begin the discussion in this chapter the interval of
+                (indicated precision in the packet + local precision) multiplied
+                by a small constant is denoted by small delta or |S.
+
+                Since some things like LSP lifetime has a relatively coarse time resolution, 
+                the interval of (indicated precision in the packet + local precision) multiplied
+                by a larger constant is used and denoted by large delta or |L.
+                For practical purposes |L is likely to span several seconds.
+            </t>
+            <t>When timestamped, packets can be protected against replay attacks by following
+                acceptance rules.
+                </t>
+            <t>For SNP and IIH packets,
                 packets deviating more than |S when compared to the local clock SHOULD be dropped.
 
             </t>
             <t>
-            When timestamped, LSPs packets that provide a timestamp triggering any of the criteria
+            When timestamped, LSPs packets that trigger any of the criteria
             </t>
             <ul>
                 <li>
-                    originating timestamp + originating lifetime less than |D from current local time
+                    (originating timestamp + originating lifetime) is smaller than ( current local time - |L )
                 </li>
                 <li>
-                    LSP lifetime more than originating lifetime
+                    LSP lifetime larger than originating lifetime
                 </li>
                 <li>
-                    originating timestamp + LSP lifetime deviating more than |D from current local time
+                    (originating timestamp + LSP lifetime) deviating more than |L from current local time
                 </li>
                 <li>
-                    originating timestamp smaller than the last timestamp seen on this interface.
+                    originating timestamp smaller than the last accepted timestamp for this fragment (except purges)
                 </li>
             </ul>
             <t>
-                should not be accepted.
+                SHOULD not be accepted.
             </t>
             <t>
-                The last condition allows for sending packets with the same timestamp within a small window
+                The last condition allows specifically for sending packets with the same timestamp within a small window
                 of time.
                 Attempts to tighten this further would limit the maximum rates of packet issuance given the
                 timestamp resolution and impose further very strict packet queuing limitations. An attempted
@@ -239,35 +252,38 @@
                 within a small window of time and should be tracked and reported.
             </t>
             <t>
-                Packets arriving on the wire should undergo timestamp sanity checking as soon as possible after
+                Packets arriving on the wire SHOULD undergo timestamp sanity checking as soon as possible after
                 being cryptographically authenticated.
             </t>
             <t>
-                Puring presents a particularly difficult problem since <xref target="RFC6232"/> mandates the
+                Purging presents a particularly difficult problem since <xref target="RFC6232"/> mandates the
                 acceptable TLVs in a purge and timestamping is currently not part of those TLVs. Due to this
                 precondition, a change in
                 standard is needed and timestamping on purging can only be originated after upgrade of the whole domain.
                 Additionally,
-                purges carry a lifetime of 0 which defeats the timestamp criteria as defined above. As such,
-                purges timestamps will not carry the originating lifetime in their timestamp. Purges that trigger any of
+                purges carry a lifetime of 0 which defeats the timestamp criteria as defined above and thus
+                need a different set of rules.
+                Purges that trigger any of
                 the criteria
             </t>
                 <ul>
                     <li>
-                        originating timestamp + |D in the future compared to current local time
+                        timeststamp contains originating lifetime different from 0.
+                    </li>
+                    <li>
+                        (originating timestamp + |L) is the future compared to current local time
                     </li>
                     <li>
                         originating timestamp less or equal to the timestamp seen on the last purge for this LSP
                     </li>
+                    <li>
+                        originating timestamp smaller than the last accepted timestamp for this fragment
+                    </li>
                 </ul>
             <t>
-                should be discarded.
+                SHOULD be discarded.
             </t>
 
-            <t>
-                The timestamp field MUST NOT be used for replay attack protection if the packet is not
-                authenticated by cryptographic signature or hash.
-            </t>
         </section>
 
 
@@ -293,7 +309,7 @@
             </t>
         </section>
 
-        <section title="Security Considerations">
+        <section title="Security Considerations" anchor="security">
             <t>For practical reasons, the timestamping replay protection defined in this document relies on different mechanisms than negotiation
                 and repetition of nonces. It preconditions clock synchronization across nodes and hence presents
                 an attack vector where the necessary clock mechanisms can be compromised if vulnerable. The attack
@@ -301,6 +317,11 @@
                 communication channels.
             </t>
 
+        </section>
+
+        <section title="Acknowledgments">
+            <t>
+            Many thanks to Joel Halpern for thorough review and comments.</t>
         </section>
 
         <section title="Yang Extensions for Database Fingerprint">
