@@ -145,49 +145,28 @@
                     reflect this reduced precision in the Precision field of any
                     timestamps it originates.</dd>
 
-                <dt>Zero Timestamp:</dt>
-                <dd>A timestamp TLV in which all time-value fields (Seconds,
-                    Fraction, and Precision) are set to zero. A Zero Timestamp
-                    signals that the originating node supports the timestamping
-                    capability but does not currently possess a usable time
-                    source. A Zero Timestamp MUST NOT be used for replay
-                    protection or Proxy Time derivation. A Zero Timestamp
-                    MAY only be carried in an Adjacency Timestamp TLV on IIH
-                    packets; it MUST NOT appear in LSP Timestamp TLVs or in
-                    Adjacency Timestamp TLVs on SNP, CSNP, or ASH packets.</dd>
-
                 <dt>Adjacency Timestamp:</dt>
                 <dd>A timestamp carried in the Adjacency Timestamp TLV, used in
-                    IIH, SNP, CSNP, and ASH packets. It includes a nonce that
-                    binds the timestamp to the current adjacency instance. On
-                    IIH packets a Zero Timestamp is permitted to indicate
-                    capability without a time source. On SNP, CSNP, and ASH
-                    packets the timestamp MUST always be a Non-Zero Timestamp.</dd>
+                    IIH, SNP, CSNP, and ASH packets. A node without a usable
+                    time source MUST NOT include this TLV.</dd>
 
                 <dt>LSP Timestamp:</dt>
                 <dd>A timestamp carried in the LSP Timestamp TLV, used
                     exclusively in LSP fragments. It indicates the point in time
                     the fragment with its current sequence number was generated
-                    and optionally carries the originating lifetime. An LSP
-                    Timestamp MUST always be a Non-Zero Timestamp; a node without
+                    and optionally carries the originating lifetime. A node without
                     a usable time source MUST NOT include an LSP Timestamp TLV.</dd>
 
-                <dt>Non-Zero Timestamp:</dt>
-                <dd>A timestamp TLV carrying a time value in which at least the
-                    Seconds or Fraction field is non-zero. A Non-Zero Timestamp
-                    represents an actual point in time and may convey either
-                    Synced Time (P-Bit = 0) or Proxy Time (P-Bit = 1).</dd>
-
-                <dt>Valid Non-Zero Timestamp:</dt>
-                <dd>A Non-Zero Timestamp that passes the applicable acceptance
+                <dt>Valid Timestamp:</dt>
+                <dd>A timestamp that passes the applicable acceptance
                     rules defined in this document.
-                    Only a Valid Non-Zero Timestamp may be used for
+                    Only a Valid Timestamp may be used for
                     replay protection decisions or Proxy Time derivation.</dd>
 
-                <dt>Invalid Non-Zero Timestamp:</dt>
-                <dd>A Non-Zero Timestamp that fails the applicable acceptance
+                <dt>Invalid Timestamp:</dt>
+                <dd>A timestamp that fails the applicable acceptance
                     rules. A
-                    packet bearing an Invalid Non-Zero Timestamp is subject to
+                    packet bearing an Invalid Timestamp is subject to
                     the rejection or hold-down procedures specified in the
                     relevant acceptance section.</dd>
             </dl>
@@ -196,14 +175,22 @@
         <section title="Timestamp TLVs" anchor="tlvs">
             <t>This section defines two new, optional TLVs for carrying timestamps in ISIS packets.
                 The two TLVs are distinguished by type code: the Adjacency Timestamp TLV is used
-                in IIH, SNP, CSNP, and ASH packets and carries an adjacency nonce, while the
+                in IIH, SNP, CSNP, and ASH packets, while the
                 LSP Timestamp TLV is used exclusively in LSP fragments and carries
                 the originating lifetime. In case of multiple
                 instances of a timestamp TLV in a packet only the first occurrence MUST be used.
-                The absence of a timestamp TLV signifies that such
-                information is not available due to a host of possible issues, one of them lack of clock
-                with synchronization precise enough.
+                The absence of a timestamp TLV signifies that the node does not have a usable
+                time source or does not support timestamping.
                 </t>
+
+            <t>A node that includes a timestamp TLV MUST ensure that the time value carried
+                is strictly monotonically increasing across successive packets of the same type on
+                the same adjacency (for Adjacency Timestamps) or for the same LSP fragment
+                (for LSP Timestamps). An implementation MUST NOT send a timestamp with a value
+                less than or equal to the last timestamp it sent in the same context, even if
+                the local clock is adjusted backwards. In such cases the implementation MUST
+                hold off sending until the clock advances past the last sent value.
+            </t>
 
             <t>Both TLVs share a common time encoding. To save space the timestamp follows semantically
                 the NTP seconds epoch <xref target="RFC5905"/> with the exception of
@@ -215,9 +202,9 @@
 
             <section title="Adjacency Timestamp TLV" anchor="adj_tlv">
             <t>
-                When present in an IIH, SNP, CSNP, or ASH packet, this TLV carries the origination
-                time and a locally generated nonce that binds the timestamp to the current adjacency
-                instance.
+                When present in an IIH, SNP, CSNP, or ASH packet, this TLV carries the
+                origination time of the packet.
+                A node without a usable time source MUST NOT include this TLV.
             </t>
 
             <figure align="left">
@@ -231,8 +218,6 @@
   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
   |H|P|   Fraction        | Precs |
   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-  |                         Nonce                                  |
-  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
   ]]></artwork>
             </figure>
@@ -240,7 +225,7 @@
             <ul>
                 <li>Type: TBD1</li>
 
-                <li>Length: 10 (fixed).</li>
+                <li>Length: 6 (fixed).</li>
 
                 <li>Seconds: 4 bytes of number of seconds since the NTP <xref target="RFC5905"/> epoch.</li>
                 <li>H(-Bit): 1 bit. Extra high order bit is used to prevent wrap-around in 2036 and pushes it out to 2242. The offset can be constructed
@@ -261,26 +246,8 @@
                     to 32768 milliseconds (value 15). Values resulting in precision worse than 1024 milliseconds
                     MUST be treated as indicating 1024 milliseconds by the receiver.
                     A node that cannot achieve a precision of 1024 milliseconds or better
-                    MUST advertise a Zero Timestamp (as defined in
-                    <xref target="terminology"/>) to indicate capability without a usable
-                    time source.</li>
-                <li>
-                    Nonce: 4 bytes. A locally generated random value chosen when the adjacency
-                    transitions from DOWN to INIT. The nonce MUST remain constant for the
-                    lifetime of the adjacency instance. A new random nonce MUST be generated
-                    each time the adjacency enters INIT state.
-                </li>
+                    MUST NOT include this TLV.</li>
             </ul>
-
-            <t>
-                A Zero Timestamp (all time fields zero) still carries the nonce.
-                This signals timestamping capability and binds the adjacency instance even
-                when no usable time source is available. A Zero Timestamp MAY only appear
-                in an Adjacency Timestamp TLV carried on IIH packets. On SNP, CSNP, and
-                ASH packets the Adjacency Timestamp TLV MUST carry a Non-Zero Timestamp;
-                a node without a usable time source MUST NOT include the Adjacency Timestamp
-                TLV on those packet types.
-            </t>
 
             </section>
 
@@ -319,28 +286,13 @@
             <ul>
                 <li>Type: TBD2</li>
 
-                <li>Length: Indicates the length of content and allows to deduce whether the originating lifetime
-                is contained in it or not. A length of 6 contains only the timestamp while a length of 8 indicates
+                <li>Length: A length of 6 contains only the timestamp while a length of 8 indicates
                 that originating lifetime is included.</li>
 
-                <li>Seconds: 4 bytes of number of seconds since the NTP <xref target="RFC5905"/> epoch.</li>
-                <li>H(-Bit): 1 bit. Extra high order bit is used to prevent wrap-around in 2036 and pushes it out to 2242. The offset can be constructed
-                    in network order as 33rd bit of a 64 bits value and the `Seconds` field OR'ed into the lower order bits of the according value.</li>
-                <li>P(-Bit): 1 bit. Proxy Time indicator. When set to 0, the originator is using
-                    Synced Time (as defined in <xref target="terminology"/>). When set to 1, the originator is using
-                    Proxy Time derived from a neighbor's IIH timestamp.</li>
-                <li>Fraction: 10 bits representing the fractional part of the second in units of 2^-10
-                    which is equivalent to approximately 1 millisecond resolution. The value MUST be
-                    less than 1024. Any value greater than 1024 MUST be treated as 1024 milliseconds.</li>
-                <li>Precision: 4 bits indicating the maximum possible slip (either in future or past)
-                    of the time source used to generate the
-                    timestamp as 2^Precision milliseconds. The advertised value MUST reflect the worst-case accuracy
-                    achievable by whatever mechanism provides the time.
-                    This yields a range from 1 millisecond (value 0)
-                    to 32768 milliseconds (value 15). Values resulting in precision worse than 1024 milliseconds
-                    MUST be treated as indicating 1024 milliseconds by the receiver.
-                    A node that cannot achieve a precision of 1024 milliseconds or better
-                    MUST NOT include an LSP Timestamp TLV.</li>
+                <li>Seconds, H-Bit, P-Bit, Fraction, Precision: Equivalent to the Adjacency
+                    Timestamp TLV (see <xref target="adj_tlv"/>). A node that cannot achieve
+                    a precision of 1024 milliseconds or better MUST NOT include an LSP
+                    Timestamp TLV.</li>
                 <li>
                     Originating Lifetime: Indicates the value of the LSP remaining lifetime
                     field when the LSP was originated (Length = 8). If the originating lifetime
@@ -358,137 +310,129 @@
                 authenticated by cryptographic signature or hash. Further considerations are outlined in
                 <xref target="security"/>.
             </t>
-            <t>To begin the discussion in this chapter the interval of
-                (indicated precision in the packet + local precision) multiplied
-                by a small constant is denoted by small delta or |S.
+            <t>The following intervals are used throughout this section:</t>
+            <dl>
+                <dt>|P (Proxy Allowance):</dt>
+                <dd>When a received packet has the P-Bit set (indicating Proxy Time
+                    as defined in <xref target="terminology"/>), a constant not smaller
+                    than 1 second MUST be added to the indicated precision before
+                    computing |S or |L. This accounts for the inherent inaccuracy of a
+                    clock derived from a neighbor's timestamp rather than a direct
+                    synchronization source.</dd>
 
-                Since some things like LSP lifetime has a relatively coarse time resolution,
-                the interval of (indicated precision in the packet + local precision) multiplied
-                by a larger constant is used and denoted by large delta or |L.
-                For practical purposes |L is likely to span several seconds.
-            </t>
-            <t>
-                When a received packet has the P-Bit set (indicating Proxy Time as defined in
-                <xref target="terminology"/>), a constant not smaller than 1 second MUST be added
-                to the indicated precision before computing |S or |L. This additional allowance
-                is denoted as |P and accounts for the inherent inaccuracy of a clock derived from
-                a neighbor's timestamp rather than a direct synchronization source.
-            </t>
+                <dt>|S (Small Delta):</dt>
+                <dd>The interval of (indicated precision in the packet + local precision)
+                    multiplied by a small constant + |P if P-Bit is set. Used for
+                    validating IIH and SNP timestamps where tight freshness is
+                    expected.</dd>
+
+                <dt>|L (Large Delta):</dt>
+                <dd>The interval of (indicated precision in the packet + local precision) multiplied
+                    by a larger constant. Used for
+                    LSP lifetime validation where coarser time resolution applies.
+                    For practical purposes |L is likely to span several seconds.</dd>
+            </dl>
             <t>When timestamped, packets can be protected against replay attacks by following
                 acceptance rules.
                 </t>
 
-            <section title="IIH Rules" anchor="iih_rationale">
+            <section title="IIH and SNP Acceptance Rules" anchor="iih_snp_rules">
 
-                <section title="IIH Nonce Considerations" anchor="iih_nonce_rationale">
-                    <t>
-                        A Zero Timestamp carries no time value and therefore cannot be validated
-                        against a local clock. Without an additional mechanism, an attacker that
-                        captures a Zero Timestamp IIH (for example during adjacency formation when
-                        the neighbor has not yet acquired a time source) could replay it at any
-                        later point to disrupt an established adjacency. The nonce field in the
-                        Adjacency Timestamp TLV exists to bind each IIH to a specific adjacency instance,
-                        closing this replay vector without requiring time-based validation of every
-                        packet.
-                    </t>
-                    <t>
-                        The nonce is generated locally by each node when entering INIT state and
-                        remains constant for the lifetime of that adjacency instance. The receiver
-                        records the neighbor's nonce at the moment the adjacency reaches UP (3-way
-                        handshake complete). While the adjacency is UP, any IIH carrying a
-                        mismatched nonce is suspect. However, a blanket rejection of mismatched
-                        nonces would prevent fast recovery after a neighbor reboot: the rebooted
-                        node generates a fresh nonce and its IIHs would be dropped until the hold
-                        timer expires.
-                    </t>
-                    <t>
-                        The solution is to accept a new nonce if and only if the IIH also carries a
-                        Valid Non-Zero Timestamp. A valid timestamp proves that the packet was
-                        generated recently (within |S of the local clock) and is therefore not a
-                        replay of a pre-existing capture. This allows immediate adjacency
-                        continuity after a reboot where the node already possesses a synchronized
-                        clock. Conversely, a rebooted node that has no clock yet (and therefore
-                        sends a Zero Timestamp with its new nonce) cannot prove freshness and must
-                        wait for the neighbor's hold timer to expire — the only case where the
-                        standard IS-IS timeout-based recovery applies.
-                    </t>
-                </section>
-
-                <section title="IIH Acceptance Rules" anchor="iih_rules">
                 <t>
-                    A node MUST track per adjacency the neighbor's nonce as received in the
-                    Adjacency Timestamp TLV. The nonce is recorded when the adjacency first reaches
-                    the UP state (3-way handshake complete). Additionally, the node tracks
-                    whether a Non-Zero Timestamp (as defined in <xref target="terminology"/>)
-                    has been observed from the neighbor (the "valid-timestamp-seen" flag).
+                    A node MUST track per adjacency the timestamp value last accepted from
+                    the neighbor (the "last-iih-timestamp-seen" and "last-snp-timestamp-seen").
+                    These values are reset when the
+                    adjacency transitions to Down state.
                 </t>
                 <t>
-                    The following rules govern acceptance of IIH packets with respect to
+                    The following rules govern acceptance of IIH and SNP packets with respect to
                     timestamping:
                 </t>
                 <ul>
                     <li>
-                        While the adjacency is in DOWN or INIT state, an IIH with or without
-                        the Adjacency Timestamp TLV is accepted (subject to normal IS-IS
-                        authentication). No nonce or timestamp validation is performed
-                        below 3-way.
+                        When the adjacency transitions to Down state, last seen timestamps
+                        MUST be cleared.
                     </li>
                     <li>
-                        When the adjacency transitions to UP, the nonce from the neighbor's
-                        Adjacency Timestamp TLV is recorded as the "active nonce" for this adjacency.
-                        If no Adjacency Timestamp TLV was present in the IIH that completed the
-                        3-way handshake, no nonce is recorded and timestamp-based protection
-                        is not active for this adjacency.
+                        While the adjacency is in Down state and last-*-timestamp-seen is
+                        not set, an IIH without the Adjacency Timestamp TLV is accepted
+                        (subject to normal IS-IS authentication). An IIH carrying an
+                        Adjacency Timestamp TLV with a timestamp deviating more than |S
+                        from the local clock (accounting for |P if the P-Bit is set) MUST
+                        be dropped. If the TLV is present and the timestamp is within |S,
+                        last-*-timestamp-seen is set to the received timestamp value.
                     </li>
                     <li>
-                        While the adjacency is UP and an active nonce is recorded, an IIH
-                        received without the Adjacency Timestamp TLV MUST be silently dropped.
+                        Once last-*-timestamp-seen is set, the according packet received without the
+                        Adjacency Timestamp TLV MUST be silently dropped.
                     </li>
                     <li>
-                        While the adjacency is UP and an active nonce is recorded, an IIH
-                        carrying a Valid Non-Zero Timestamp with a nonce differing from the
-                        active nonce MUST be accepted. The active nonce MUST be updated to
-                        the new value. This covers the case of a neighbor that has rebooted
-                        and generated a fresh nonce but already possesses a valid time source.
-                        The Valid Non-Zero Timestamp proves the packet is not a replay.
+                        Once last-*-timestamp-seen is set, a packet carrying a timestamp
+                        less than or equal to last-*-timestamp-seen MUST be silently dropped.
                     </li>
                     <li>
-                        While the adjacency is UP and an active nonce is recorded, an IIH
-                        carrying a Zero Timestamp or an Invalid Non-Zero Timestamp with a
-                        nonce differing from the active nonce MUST be silently dropped.
-                        Without a Valid Non-Zero Timestamp to prove freshness, a nonce
-                        mismatch is indistinguishable from a replay.
+                        Once last-*-timestamp-seen is set, a packet carrying a timestamp
+                        deviating more than |S from the local clock
+                        (accounting for |P if the P-Bit is set) MUST be dropped.
                     </li>
                     <li>
-                        While the adjacency is UP and an active nonce is recorded, an IIH
-                        carrying an Invalid Non-Zero Timestamp (i.e. deviating more than |S
-                        from the local clock, accounting for |P if the P-Bit is set) with the
-                        correct nonce SHOULD be dropped.
+                        A packet carrying a Valid Timestamp (greater than last-*-timestamp-seen
+                        and within |S of the local clock) MUST be accepted and
+                        last-*-timestamp-seen MUST be updated to the received value.
                     </li>
                     <li>
-                        While the adjacency is UP, the valid-timestamp-seen flag is set, and
-                        the active nonce matches, an IIH carrying a Zero Timestamp SHOULD be
-                        dropped. A neighbor that has previously demonstrated a functioning
-                        time source is not expected to revert to no clock without the adjacency
-                        transitioning through DOWN first.
+                        If last-*-timestamp-seen is set and no valid packet has been
+                        accepted for the duration of the adjacency hold period,
+                        last-*-timestamp-seen MUST be cleared. This covers the case where
+                        a neighbor issued timestamps and then rebooted without a clock,
+                        preventing a permanent lockout on that adjacency.
+                    </li>
+                </ul>
+
+                <section title="Recovery Considerations" anchor="recovery_considerations">
+                <t>
+                    Clearing last-*-timestamp-seen on transition into Down state is not
+                    sufficient to prevent permanent lockout. Consider the following scenario:
+                    the adjacency is already in Down state, a valid timestamped IIH arrives
+                    from the neighbor (setting last-*-timestamp-seen), and the neighbor then
+                    reboots without a clock. The rebooted neighbor now sends IIHs without the
+                    Adjacency Timestamp TLV, which are dropped because last-*-timestamp-seen
+                    is set. Since the adjacency is already Down, no hold timer is running to
+                    expire it and trigger a fresh Down transition that would clear the value.
+                    The adjacency is permanently stuck.
+                </t>
+                <t>
+                    The inactivity reset rule above resolves this: if no valid timestamped
+                    packet is accepted within the hold period (regardless of adjacency state),
+                    last-*-timestamp-seen is cleared unconditionally. This allows the
+                    adjacency formation to proceed once the rebooted neighbor resumes sending
+                    IIHs (with or without timestamps).
+                </t>
+                <t>
+                    When a node reboots and has lost its clock, the neighbor's
+                    last-timestamp-seen still holds the value from before the reboot.
+                    The rebooted node cannot send a timestamp higher than this value
+                    because it has no time source. Two recovery paths exist:
+                </t>
+                <ul>
+                    <li>
+                        The neighbor's adjacency hold timer expires (no valid IIHs
+                        accepted), the adjacency transitions to Down, last-timestamp-seen
+                        is cleared, and the 3-way handshake proceeds normally once the
+                        rebooted node acquires a clock.
                     </li>
                     <li>
-                        While the adjacency is UP and the valid-timestamp-seen flag is NOT set,
-                        an IIH carrying a Zero Timestamp with the correct nonce MUST be accepted
-                        but MUST NOT be used for replay checking or Proxy Time derivation.
+                        The rebooted node derives Proxy Time from a received IIH on
+                        the same or another interface. Since time always advances, the
+                        derived Proxy Time will be higher than any previously sent
+                        timestamp. The node can then send an IIH with this Proxy Time
+                        which will be accepted by the neighbor (it is greater than
+                        last-timestamp-seen), allowing the adjacency to recover without
+                        waiting for the hold timer.
                     </li>
                 </ul>
                 </section>
 
-                <section title="Fast Adjacency Reset" anchor="fast_reset">
-                <t>
-                    A node that wishes to signal an intentional adjacency reset to its neighbor
-                    MAY send an IIH in INIT state carrying the Adjacency Timestamp TLV with the
-                    currently active nonce. Because the nonce matches, the receiver can
-                    distinguish this from a replayed packet and immediately transition the
-                    adjacency to DOWN without waiting for the hold timer to expire.
-                </t>
-                </section>
             </section>
 
             <section title = "LSP Acceptance Rules">
@@ -602,7 +546,8 @@
         </section>
 
         <section title="Security Considerations" anchor="security">
-            <t>For practical reasons, the timestamping replay protection defined in this document relies on different mechanisms than negotiation
+            <t>For practical reasons, the timestamping replay protection defined in this document relies on
+                strictly monotonically increasing timestamps rather than negotiation
                 and repetition of nonces. It preconditions clock synchronization across nodes and hence presents
                 an attack vector where the necessary clock mechanisms can be compromised if vulnerable. The attack
                 windows and vectors are otherwise comparable due to the nature of IGPs which do not rely on lossless
