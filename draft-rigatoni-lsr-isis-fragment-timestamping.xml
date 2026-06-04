@@ -112,7 +112,12 @@
             <t>
                 As a second application, attackers attempting to replay previously recorded authenticated exchanges
                 between nodes will be deflected by the timestamping mechanism refusing to accept packets failing the
-                required sanity checks.
+                required sanity checks. Such a protection relies however on quite closely synchronized clocks which in
+                itself is an chicken-and-egg problem given predominant dependency on mechanisms such as
+                NTP <xref target="RFC5905"/> that rely themselves on forwarding decisions and resulting
+                server connectivity. This document presents a framework where adjacencies can be formed
+                using a roughly accurate time derived from neighbor's precise time before local clock
+                is synchronized fully.
             </t>
 
             <t>
@@ -130,9 +135,9 @@
                 <dd>A time source on a router that is derived from an external
                     synchronization mechanism such as NTP <xref target="RFC5905"/>,
                     PTP <xref target="IEEEstd1588"/>, or a local hardware clock
-                    of sufficient quality (e.g. a stratum 0 module). A router
+                    of sufficient quality (e.g. a stratum module). A router
                     operating with Synced Time is considered to have an
-                    authoritative clock for the purposes of this specification.</dd>
+                    trustworthy clock for the purposes of this specification.</dd>
 
                 <dt>Proxy Time:</dt>
                 <dd>A time approximation on a router that has no Synced Time
@@ -141,9 +146,10 @@
                     possess Synced Time. Proxy Time
                     is inherently less precise than Synced Time as it accumulates
                     the precision error of the source plus any propagation
-                    delay on the link. A router operating with Proxy Time SHOULD
+                    delay on the link. A router operating with Proxy Time MUST
                     reflect this reduced precision in the Precision field of any
-                    timestamps it originates.</dd>
+                    timestamps it originates. Proxy time MUST NOT be derived
+                    from any other packet than neighbor's IIH.</dd>
 
                 <dt>Adjacency Timestamp:</dt>
                 <dd>A timestamp carried in the Adjacency Timestamp TLV, used in
@@ -176,11 +182,12 @@
             <t>This section defines two new, optional TLVs for carrying timestamps in ISIS packets.
                 The two TLVs are distinguished by type code: the Adjacency Timestamp TLV is used
                 in IIH, SNP, CSNP, and ASH packets, while the
-                LSP Timestamp TLV is used exclusively in LSP fragments and carries
-                the originating lifetime. In case of multiple
-                instances of a timestamp TLV in a packet only the first occurrence MUST be used.
+                LSP Timestamp TLV is used exclusively in LSPs and carries
+                the originating lifetime of the fragment. In case of multiple
+                instances of a timestamp TLV in a packet are present,
+                only the first occurrence MUST be used.
                 The absence of a timestamp TLV signifies that the node does not have a usable
-                time source or does not support timestamping.
+                time source or does not support timestamping at all.
                 </t>
 
             <t>A node that includes a timestamp TLV MUST ensure that the time value carried
@@ -233,9 +240,13 @@
                 <li>P(-Bit): 1 bit. Proxy Time indicator. When set to 0, the originator is using
                     Synced Time (as defined in <xref target="terminology"/>). When set to 1, the originator is using
                     Proxy Time derived from a neighbor's IIH timestamp.</li>
-                <li>Fraction: 10 bits representing the fractional part of the second in units of 2^-10
+                <li>Fraction: 10 bits representing the fractional part of the second linearly
+                    in units of 2^-10 seconds
                     which is equivalent to approximately 1 millisecond resolution. The value MUST be
-                    less than 1024. Any value greater than 1024 MUST be treated as 1024 milliseconds.</li>
+                    less than 1024. Any value greater than 1024 MUST be treated as 1024 milliseconds.
+                    For example, a fraction value of 3 represents 3/1024 seconds ≈ 2.93 milliseconds
+                    and a value of 4 represents 4/1024 seconds ≈ 3.91 milliseconds, demonstrating
+                    sub-millisecond step granularity.</li>
                 <li>Precision: 4 bits indicating the maximum possible slip (either in future or past)
                     of the time source used to generate the
                     timestamp as 2^Precision milliseconds. The time source may be a synchronization
@@ -245,6 +256,8 @@
                     This yields a range from 1 millisecond (value 0)
                     to 32768 milliseconds (value 15). Values resulting in precision worse than 1024 milliseconds
                     MUST be treated as indicating 1024 milliseconds by the receiver.
+                    For example, a precision value of 1 indicates 2^1 = 2 milliseconds maximum slip
+                    and a value of 2 indicates 2^2 = 4 milliseconds maximum slip.
                     A node that cannot achieve a precision of 1024 milliseconds or better
                     MUST NOT include this TLV.</li>
             </ul>
@@ -310,10 +323,15 @@
                 authenticated by cryptographic signature or hash. Further considerations are outlined in
                 <xref target="security"/>.
             </t>
+
+            <t>
+                Packets arriving on the wire SHOULD undergo timestamp sanity checking as soon as possible after
+                being cryptographically authenticated.
+            </t>
             <t>The following intervals are used throughout this section:</t>
             <dl>
                 <dt>|P (Proxy Allowance):</dt>
-                <dd>When a received packet has the P-Bit set (indicating Proxy Time
+                <dd>When a received timestamp has the P-Bit set (indicating Proxy Time
                     as defined in <xref target="terminology"/>), a constant not smaller
                     than 1 second MUST be added to the indicated precision before
                     computing |S or |L. This accounts for the inherent inaccuracy of a
@@ -323,12 +341,12 @@
                 <dt>|S (Small Delta):</dt>
                 <dd>The interval of (indicated precision in the packet + local precision)
                     multiplied by a small constant + |P if P-Bit is set. Used for
-                    validating IIH and SNP timestamps where tight freshness is
+                    validating IIH and SNP timestamps where tight clock accuracy is
                     expected.</dd>
 
                 <dt>|L (Large Delta):</dt>
-                <dd>The interval of (indicated precision in the packet + local precision) multiplied
-                    by a larger constant. Used for
+                <dd>The interval of (indicated precision in the packet + local precision ) multiplied
+                    by a larger constant + |P if P-Bit is set. Used for
                     LSP lifetime validation where coarser time resolution applies.
                     For practical purposes |L is likely to span several seconds.</dd>
             </dl>
@@ -336,7 +354,7 @@
                 acceptance rules.
                 </t>
 
-            <section title="IIH and SNP Acceptance Rules" anchor="iih_snp_rules">
+            <section title="IIH, SNP and ASH Acceptance Rules" anchor="iih_snp_rules">
 
                 <t>
                     A node MUST track per adjacency the timestamp value last accepted from
@@ -345,22 +363,24 @@
                     adjacency transitions to Down state.
                 </t>
                 <t>
-                    The following rules govern acceptance of IIH and SNP packets with respect to
+                    The following rules govern acceptance of IIH, SNP and ASH packets with respect to
                     timestamping:
                 </t>
-                <ul>
+                <ol>
                     <li>
                         When the adjacency transitions to Down state, last seen timestamps
                         MUST be cleared.
                     </li>
                     <li>
-                        While the adjacency is in Down state and last-*-timestamp-seen is
+                        While the adjacency is in Down state and last-iih-timestamp-seen is
                         not set, an IIH without the Adjacency Timestamp TLV is accepted
                         (subject to normal IS-IS authentication). An IIH carrying an
                         Adjacency Timestamp TLV with a timestamp deviating more than |S
                         from the local clock (accounting for |P if the P-Bit is set) MUST
                         be dropped. If the TLV is present and the timestamp is within |S,
-                        last-*-timestamp-seen is set to the received timestamp value.
+                        last-iih-timestamp-seen is set to the received timestamp value. Same
+                        rule applies for SNP and ASH packets while using the last-snp-timestamp-seen
+                        variable.
                     </li>
                     <li>
                         Once last-*-timestamp-seen is set, the according packet received without the
@@ -377,7 +397,8 @@
                     </li>
                     <li>
                         A packet carrying a Valid Timestamp (greater than last-*-timestamp-seen
-                        and within |S of the local clock) MUST be accepted and
+                        and within |S of the local clock and accounting for |P if the P-Bit is set)
+                        MUST be accepted and
                         last-*-timestamp-seen MUST be updated to the received value.
                     </li>
                     <li>
@@ -387,7 +408,7 @@
                         a neighbor issued timestamps and then rebooted without a clock,
                         preventing a permanent lockout on that adjacency.
                     </li>
-                </ul>
+                </ol>
 
                 <section title="Recovery Considerations" anchor="recovery_considerations">
                 <t>
@@ -395,8 +416,9 @@
                     sufficient to prevent permanent lockout. Consider the following scenario:
                     the adjacency is already in Down state, a valid timestamped IIH arrives
                     from the neighbor (setting last-*-timestamp-seen), and the neighbor then
-                    reboots without a clock. The rebooted neighbor now sends IIHs without the
-                    Adjacency Timestamp TLV, which are dropped because last-*-timestamp-seen
+                    reboots without support of timestamping.
+                    The rebooted neighbor now sends IIHs without the
+                    Adjacency Timestamp TLV forever, which are dropped because last-*-timestamp-seen
                     is set. Since the adjacency is already Down, no hold timer is running to
                     expire it and trigger a fresh Down transition that would clear the value.
                     The adjacency is permanently stuck.
@@ -436,13 +458,64 @@
             </section>
 
             <section title = "LSP Acceptance Rules">
+
+            <t>The following diagrams illustrate the temporal relationships between
+                originating timestamp, originating lifetime, LSP remaining lifetime, and
+                the acceptance window.</t>
+
+            <figure align="left">
+                <artwork align="left" type="ascii-art"><![CDATA[
+Normal LSP in transit:
+
+  orig_ts                          now             orig_ts + orig_lifetime
+  |                                 |                       |
+  |=================================|=======================|
+  |<--- elapsed since origination ->|<-- lsp_lifetime ----->|
+  |                                 |                       |
+  |<-------------- orig_lifetime (from Timestamp TLV) ----->|
+
+  Invariant: orig_ts + orig_lifetime - lsp_lifetime ≈ now
+  (the difference is propagation delay + processing)
+]]></artwork>
+            </figure>
+
+            <figure align="left" anchor="f2">
+                <artwork align="left" type="ascii-art"><![CDATA[
+Acceptance window for (orig_ts + lsp_lifetime):
+
+        |L|                   now                          |L|
+        <->                    |                           <->
+     REJECT |<============ ACCEPT WINDOW ===============>| REJECT
+            |                                            |
+            | now - L                            now + L |
+
+  - orig_ts + lsp_lifetime must fall within [now - |L, now + |L]
+  - lsp_lifetime must be ≤ orig_lifetime (no inflation)
+  - orig_ts must be > last accepted timestamp (strictly monotonic)
+]]></artwork>
+            </figure>
+
             <t>
-            When timestamped, LSPs packets that trigger any of the criteria
+                A node MUST track per LSP fragment the timestamp value last accepted
+                (the "last-fragment-timestamp-seen"). This variable is set when a
+                timestamped fragment is accepted and is used to enforce monotonicity
+                across successive instances of the same fragment. If a newer fragment
+                (as determined by standard IS-IS fragment comparison rules) arrives
+                without an LSP Timestamp TLV, it MUST be accepted normally and
+                last-fragment-timestamp-seen MUST be cleared for that fragment. This
+                covers the case of a node that was downgraded or lost its clock and is
+                re-originating without timestamps. To prevent a chain of attacks
+                with pre-recorded higher fragment version numbers without timestamp a node
+                MAY decide to issue timestamped newer versions the fragment
+                with a large increment in case of such an attack.
+
             </t>
-            <ul>
-                <li>
-                    (originating timestamp + originating lifetime) is smaller than ( current local time - |L )
-                </li>
+
+            <t>
+            When timestamped, LSPs packets that trigger any of the criteria corresponding to
+                <xref target="f2"/> acceptance window failure
+            </t>
+            <ol>
                 <li>
                     LSP lifetime larger than originating lifetime
                 </li>
@@ -450,9 +523,9 @@
                     (originating timestamp + LSP lifetime) deviating more than |L from current local time
                 </li>
                 <li>
-                    originating timestamp smaller than the last accepted timestamp for this fragment (except purges)
+                    originating timestamp smaller than last-fragment-timestamp-seen (except purges)
                 </li>
-            </ul>
+            </ol>
             <t>
                 SHOULD not be accepted.
             </t>
@@ -465,10 +538,7 @@
                 within this window is detectable by arrival of excessive amount of identical IIH or SNP packets
                 within a small window of time and should be tracked and reported.
             </t>
-            <t>
-                Packets arriving on the wire SHOULD undergo timestamp sanity checking as soon as possible after
-                being cryptographically authenticated.
-            </t>
+
             <t>
                 Purging presents a particularly difficult problem since <xref target="RFC6232"/> mandates the
                 acceptable TLVs in a purge and timestamping is currently not part of those TLVs. Due to this
@@ -480,20 +550,24 @@
                 Purges that trigger any of
                 the criteria
             </t>
-                <ul>
+                <ol>
                     <li>
-                        timeststamp contains originating lifetime different from 0.
+                        If last-fragment-timestamp-seen is set, a purge without an LSP Timestamp
+                        TLV MUST be rejected.
                     </li>
                     <li>
-                        (originating timestamp + |L) is the future compared to current local time
+                        timestamp contains originating lifetime different from 0.
+                    </li>
+                    <li>
+                        (originating timestamp + |L) is in the future compared to current local time
                     </li>
                     <li>
                         originating timestamp less or equal to the timestamp seen on the last purge for this LSP
                     </li>
                     <li>
-                        originating timestamp smaller than the last accepted timestamp for this fragment
+                        originating timestamp smaller than last-fragment-timestamp-seen
                     </li>
-                </ul>
+                </ol>
             <t>
                 SHOULD be discarded.
             </t>
@@ -504,17 +578,36 @@
         <section title="Proxy Time Derivation" anchor="proxy_derivation">
             <t>
                 A node that has not yet synchronized a precise internal clock (e.g. has not
-                acquired NTP synchronization) SHOULD derive its Proxy Time from the average of
-                the timestamps received in IIH packets from its adjacent neighbors. This
-                averaging reduces the impact of any single neighbor having a slightly skewed
-                clock.
+                acquired NTP synchronization) SHOULD derive its Proxy Time from its adjacent
+                neighbors' IIH timestamps using the following algorithm:
             </t>
+            <ol>
+                <li>
+                    Collect the most recent accepted IIH timestamp from each neighbor that
+                    has P=0 (Synced Time). Timestamps with P=1 MUST be excluded from Proxy
+                    Time derivation to prevent compounding of inaccuracies through successive
+                    diffusion of proxy-derived clocks across multiple hops.
+                </li>
+                <li>
+                    Compute the median of these collected timestamps. Using the median rather
+                    than the average ensures that an attacker controlling a minority of
+                    adjacencies cannot skew the derived Proxy Time. This thwarts replay attackers
+                    controlling fewer than 50% of the eligible adjacencies.
+                </li>
+                <li>
+                    The new Proxy Time is set to:
+                    max(current Proxy Time, computed median).
+                    Proxy Time MUST never decrease. This monotonicity constraint prevents a
+                    skew-down attack in which an adversary replays old (but once-valid)
+                    timestamps on a newly-formed adjacency in an attempt to pull the proxy
+                    clock backwards.
+                </li>
+            </ol>
             <t>
-                When computing this average, a node MUST ignore IIH timestamps that have the
-                P-Bit set. Only timestamps originating from neighbors with Synced Time (P=0) are
-                eligible as input for Proxy Time derivation. This prevents compounding of
-                inaccuracies through successive diffusion of proxy-derived clocks across
-                multiple hops.
+                The combination of median selection and monotonic advancement provides
+                Byzantine-fault-tolerant proxy derivation: an attacker must compromise
+                more than half the eligible adjacencies of a node to influence its Proxy
+                Time at all, and even then cannot move it backwards.
             </t>
             <t>
                 A node operating with Proxy Time MUST set the P-Bit on all timestamps it
@@ -554,12 +647,12 @@
                 communication channels.
             </t>
             <t>
-                The replay protection mechanisms for IIH packets defined in this document
+                The replay protection mechanisms defined in this document
                 rely on the IS-IS three-way handshake as defined in <xref target="RFC5303"/>
                 to prevent an attacker from exploiting adjacency state transitions to reset
                 timestamp tracking state. Accordingly, IS-IS three-way handshake MUST be
                 deployed on all interfaces and cryptographic authentication MUST be enabled
-                before IIH timestamping is used for replay attack protection. If either
+                before timestamping is used for replay attack protection. If either
                 precondition is not met, IIH timestamps MUST NOT be relied upon for replay
                 protection and SHOULD be used for informational purposes only.
                 LSP replay protection as defined in this document does not depend on the
@@ -571,7 +664,7 @@
 
         <section title="Acknowledgments">
             <t>
-            Many thanks to Joel Halpern for thorough review and comments.</t>
+            Many thanks to Joel Halpern for thorough review, comments and initial idea of proxy clock.</t>
         </section>
 
         <section title="Yang Extensions for Database Fingerprint">
