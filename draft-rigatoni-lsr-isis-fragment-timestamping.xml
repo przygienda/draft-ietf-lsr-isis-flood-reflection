@@ -77,13 +77,18 @@
 
         <section title="Introduction" anchor="intro">
             <t>
-                Many applications in today’s networks rely on safe, reliable and timely flooding of link-state information, such as,
-                but not limited to Traffic Engineered networks and advanced telemetry solutions.  If such information is delayed during
+                Many applications in today’s networks rely on safe, reliable and timely flooding of
+                link-state information, such as,
+                but not limited to Traffic Engineered networks and advanced telemetry solutions.  If such
+                information is delayed during
                 flooding it can be difficult for those
-                applications to adequately fulfill their intended purpose.  This document describes extensions to ISIS allowing it
+                applications to adequately fulfill their intended purpose.  This document describes extensions to
+                ISIS allowing it
                 to carry the origination time on each packet.
-                The origination time can be used to aid troubleshooting of large domains and/or by the applications themselves
-                to improve their behavior. Further, the addition of timestamps into IS-IS packets allows to address replay
+                The origination time can be used to aid troubleshooting of large domains and/or by the applications
+                themselves
+                to improve their behavior. Further, the addition of timestamps into IS-IS packets allows to address
+                replay
                 attacks. Thus, IIHs
                 can carry optional timestamps and LSPs will additionally contain in the timestamp the original
                 lifetime used when originating the fragment in question.
@@ -184,8 +189,8 @@
                 in IIH, SNP, CSNP, and ASH packets, while the
                 LSP Timestamp TLV is used exclusively in LSPs and carries
                 the originating lifetime of the fragment. In case of multiple
-                instances of a timestamp TLV in a packet are present,
-                only the first occurrence MUST be used.
+                instances of a timestamp TLV in a packet are present, the first one MUST be
+                processed, and any later ones MUST be ignored.
                 The absence of a timestamp TLV signifies that the node does not have a usable
                 time source or does not support timestamping at all.
                 </t>
@@ -202,8 +207,10 @@
             <t>Both TLVs share a common time encoding. To save space the timestamp follows semantically
                 the NTP seconds epoch <xref target="RFC5905"/> with the exception of
                 an extra bit in the seconds field to extend the wrap around and
-                carrying approximately 1 millisecond resolution in the fractional part of the timestamp since this is considered
-                sufficient for link-state purposes. The specification follows further guidelines of <xref target="RFC8877"/>
+                carrying approximately 1 millisecond resolution in the fractional part of the timestamp
+                since this is considered
+                sufficient for link-state purposes. The specification follows further
+                guidelines of <xref target="RFC8877"/>
                 as far as possible.
             </t>
 
@@ -235,8 +242,11 @@
                 <li>Length: 6 (fixed).</li>
 
                 <li>Seconds: 4 bytes of number of seconds since the NTP <xref target="RFC5905"/> epoch.</li>
-                <li>H(-Bit): 1 bit. Extra high order bit is used to prevent wrap-around in 2036 and pushes it out to 2242. The offset can be constructed
-                    in network order as 33rd bit of a 64 bits value and the `Seconds` field OR'ed into the lower order bits of the according value.</li>
+                <li>H(-Bit): 1 bit. Extra high order bit is used to prevent wrap-around in 2036 and pushes it out to 2242.
+                    The offset can be constructed
+                    in network order as 33rd bit of a 64 bits value and the `Seconds` field OR'ed into the lower
+                    order bits of
+                    the according value.</li>
                 <li>P(-Bit): 1 bit. Proxy Time indicator. When set to 0, the originator is using
                     Synced Time (as defined in <xref target="terminology"/>). When set to 1, the originator is using
                     Proxy Time derived from a neighbor's IIH timestamp.</li>
@@ -383,7 +393,7 @@
                         variable.
                     </li>
                     <li>
-                        Once last-*-timestamp-seen is set, the according packet received without the
+                        Once last-*-timestamp-seen is set, the corresponding packet received without the
                         Adjacency Timestamp TLV MUST be silently dropped.
                     </li>
                     <li>
@@ -512,7 +522,7 @@ Acceptance window for (orig_ts + lsp_lifetime):
             </t>
 
             <t>
-            When timestamped, LSPs packets that trigger any of the criteria corresponding to
+            When timestamped, LSPs packets which are not purges and trigger any of the criteria corresponding to
                 <xref target="f2"/> acceptance window failure
             </t>
             <ol>
@@ -530,12 +540,13 @@ Acceptance window for (orig_ts + lsp_lifetime):
                 SHOULD not be accepted.
             </t>
             <t>
-                The last condition allows specifically for sending packets with the same timestamp within a small window
+                The last condition allows specifically for sending multiple versions of a
+                fragment with the same timestamp within a small window
                 of time.
                 Attempts to tighten this further would limit the maximum rates of packet issuance given the
                 timestamp resolution and impose further very strict packet queuing limitations. An attempted
                 replay attack
-                within this window is detectable by arrival of excessive amount of identical IIH or SNP packets
+                within this window is detectable by arrival of excessive amount of versions of the same fragment
                 within a small window of time and should be tracked and reported.
             </t>
 
@@ -583,20 +594,31 @@ Acceptance window for (orig_ts + lsp_lifetime):
             </t>
             <ol>
                 <li>
-                    Collect the most recent accepted IIH timestamp from each neighbor that
+                    Collect periodically the most recent accepted IIH timestamp from each neighbor that
                     has P=0 (Synced Time). Timestamps with P=1 MUST be excluded from Proxy
                     Time derivation to prevent compounding of inaccuracies through successive
-                    diffusion of proxy-derived clocks across multiple hops.
+                    diffusion of proxy-derived clocks across multiple hops. The acceptance
+                    rules for IIHs when using or deriving a proxy time is relaxed to only
+                    check for authentication and monotonicity against current proxy time.
+                    The proxy time can be used to set a local clock source progressing
+                    the proxy time or otherwise must be derived often enough to not trigger
+                    sent IIH acceptance rules and resulting discard on the receivers.
                 </li>
                 <li>
                     Compute the median of these collected timestamps. Using the median rather
                     than the average ensures that an attacker controlling a minority of
-                    adjacencies cannot skew the derived Proxy Time. This thwarts replay attackers
-                    controlling fewer than 50% of the eligible adjacencies.
+                    adjacencies cannot skew the derived Proxy Time. In case of even amount
+                    of samples, the value one above the index of 1/2 of the samples must be used to
+                    prevent attacks when only 2 adjacencies are established.
+                    This thwarts replay attackers
+                    controlling fewer than 50% of the eligible adjacencies.I
                 </li>
                 <li>
                     The new Proxy Time is set to:
                     max(current Proxy Time, computed median).
+                    When updating the proxy time with new median maximum of its precision and
+                    precision
+                    of local source SHOULD be used to advertise with the proxy time.
                     Proxy Time MUST never decrease. This monotonicity constraint prevents a
                     skew-down attack in which an adversary replays old (but once-valid)
                     timestamps on a newly-formed adjacency in an attempt to pull the proxy
