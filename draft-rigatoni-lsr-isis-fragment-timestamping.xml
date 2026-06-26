@@ -16,7 +16,7 @@
 
     <front>
 
-        <title>Optional IS-IS Packet Timestamping and Database Fingerprint</title>
+        <title>Optional IS-IS Packet Timestamping</title>
 
         <author initials='T.' surname='Przygienda' fullname='Tony Przygienda'>
             <organization>HPE Juniper Networking</organization>
@@ -38,17 +38,6 @@
                 <email>anthony.li@hpe.com</email>
             </address>
         </author>
-
-
-        <author initials='R.' surname='Westphal' fullname='Renato Westphal'>
-            <organization>NetDEF</organization>
-            <address>
-                <email>renato@netdef.org</email>
-            </address>
-        </author>
-
-
-
         <date/>
 
         <abstract>
@@ -63,8 +52,6 @@
                 to ISIS supporting distribution of fragment origination time.  The origination time can be used to aid
                 troubleshooting and/or by the applications themselves to improve their behavior.
                 Timestamping can be also used to detect replay attack which are not addressed in IS-IS currently.
-                Additionally, a mechanism is proposed by which the consistency of databases on all routers in
-                the network can be easily verified and a rough metric of diffusion behavior derived.
 
             </t>
 
@@ -124,13 +111,6 @@
                 using a roughly accurate time derived from neighbor's precise time before local clock
                 is synchronized fully.
             </t>
-
-            <t>
-                Ultimately, it is useful in large networks when they are in a stable state to observe
-                whether all databases have synchronized properly and derive the delays involved in the propagation
-                of information across the network. This document proposes an extension to the yang schema that allows
-                easy access to such information.
-            </t>
         </section>
 
         <section title="Terminology" anchor="terminology">
@@ -158,7 +138,7 @@
 
                 <dt>Adjacency Timestamp:</dt>
                 <dd>A timestamp carried in the Adjacency Timestamp TLV, used in
-                    IIH, SNP, CSNP, and ASH packets. A node without a usable
+                    IIH, SNP, and ASH packets. A node without a usable
                     time source MUST NOT include this TLV.</dd>
 
                 <dt>LSP Timestamp:</dt>
@@ -197,11 +177,11 @@
 
             <t>A node that includes a timestamp TLV MUST ensure that the time value carried
                 is strictly monotonically increasing across successive packets of the same type on
-                the same adjacency (for Adjacency Timestamps) or for the same LSP fragment
+                the same adjacency (for Adjacency Timestamps) and monotonically for the same LSP fragment
                 (for LSP Timestamps). An implementation MUST NOT send a timestamp with a value
-                less than or equal to the last timestamp it sent in the same context, even if
+                 equal (and for Adjacency Timestamp also less than) to the last timestamp it sent in the same context, even if
                 the local clock is adjusted backwards. In such cases the implementation MUST
-                hold off sending until the clock advances past the last sent value.
+                hold off sending until the clock advances until it reaches an acceptable value.
             </t>
 
             <t>Both TLVs share a common time encoding. To save space the timestamp follows semantically
@@ -249,7 +229,7 @@
                     the according value.</li>
                 <li>P(-Bit): 1 bit. Proxy Time indicator. When set to 0, the originator is using
                     Synced Time (as defined in <xref target="terminology"/>). When set to 1, the originator is using
-                    Proxy Time derived from a neighbor's IIH timestamp.</li>
+                    Proxy Time derived from neighbors' IIH timestamps.</li>
                 <li>Fraction: 10 bits representing the fractional part of the second linearly
                     in units of 2^-10 seconds
                     which is equivalent to approximately 1 millisecond resolution. The value MUST be
@@ -309,8 +289,7 @@
             <ul>
                 <li>Type: TBD2</li>
 
-                <li>Length: A length of 6 contains only the timestamp while a length of 8 indicates
-                that originating lifetime is included.</li>
+                <li>Length: Constant of 8 bytes.</li>
 
                 <li>Seconds, H-Bit, P-Bit, Fraction, Precision: Equivalent to the Adjacency
                     Timestamp TLV (see <xref target="adj_tlv"/>). A node that cannot achieve
@@ -318,8 +297,7 @@
                     Timestamp TLV.</li>
                 <li>
                     Originating Lifetime: Indicates the value of the LSP remaining lifetime
-                    field when the LSP was originated (Length = 8). If the originating lifetime
-                    is not available, the TLV is sent with Length = 6.
+                    field when the LSP was originated.
                 </li>
             </ul>
 
@@ -368,8 +346,8 @@
 
                 <t>
                     A node MUST track per adjacency the timestamp value last accepted from
-                    the neighbor (the "last-iih-timestamp-seen" and "last-snp-timestamp-seen").
-                    These values are reset when the
+                    the neighbor (the "last-iih-timestamp-seen", "last-snp-timestamp-seen" and "last-ash-timestamp-seen").
+                    All these values are reset when the
                     adjacency transitions to Down state.
                 </t>
                 <t>
@@ -389,7 +367,7 @@
                         from the local clock (accounting for |P if the P-Bit is set) MUST
                         be dropped. If the TLV is present and the timestamp is within |S,
                         last-iih-timestamp-seen is set to the received timestamp value. Same
-                        rule applies for SNP and ASH packets while using the last-snp-timestamp-seen
+                        rule applies for SNP and ASH packets while using the corresponding
                         variable.
                     </li>
                     <li>
@@ -412,9 +390,9 @@
                         last-*-timestamp-seen MUST be updated to the received value.
                     </li>
                     <li>
-                        If last-*-timestamp-seen is set and no valid packet has been
+                        If last-iih-timestamp-seen is set and no valid packet has been
                         accepted for the duration of the adjacency hold period,
-                        last-*-timestamp-seen MUST be cleared. This covers the case where
+                        all last-*-timestamp-seen MUST be cleared. This covers the case where
                         a neighbor issued timestamps and then rebooted without a clock,
                         preventing a permanent lockout on that adjacency.
                     </li>
@@ -422,13 +400,13 @@
 
                 <section title="Recovery Considerations" anchor="recovery_considerations">
                 <t>
-                    Clearing last-*-timestamp-seen on transition into Down state is not
+                    Clearing last-iih-timestamp-seen on transition into Down state is not
                     sufficient to prevent permanent lockout. Consider the following scenario:
                     the adjacency is already in Down state, a valid timestamped IIH arrives
-                    from the neighbor (setting last-*-timestamp-seen), and the neighbor then
+                    from the neighbor (setting last-iih-timestamp-seen), and the neighbor then
                     reboots without support of timestamping.
                     The rebooted neighbor now sends IIHs without the
-                    Adjacency Timestamp TLV forever, which are dropped because last-*-timestamp-seen
+                    Adjacency Timestamp TLV forever, which are dropped because last-iih-timestamp-seen
                     is set. Since the adjacency is already Down, no hold timer is running to
                     expire it and trigger a fresh Down transition that would clear the value.
                     The adjacency is permanently stuck.
@@ -436,21 +414,21 @@
                 <t>
                     The inactivity reset rule above resolves this: if no valid timestamped
                     packet is accepted within the hold period (regardless of adjacency state),
-                    last-*-timestamp-seen is cleared unconditionally. This allows the
+                    last-*-timestamp-seen variables are cleared unconditionally. This allows the
                     adjacency formation to proceed once the rebooted neighbor resumes sending
                     IIHs (with or without timestamps).
                 </t>
                 <t>
                     When a node reboots and has lost its clock, the neighbor's
-                    last-timestamp-seen still holds the value from before the reboot.
+                    last-iih-timestamp-seen still holds the value from before the reboot.
                     The rebooted node cannot send a timestamp higher than this value
                     because it has no time source. Two recovery paths exist:
                 </t>
                 <ul>
                     <li>
                         The neighbor's adjacency hold timer expires (no valid IIHs
-                        accepted), the adjacency transitions to Down, last-timestamp-seen
-                        is cleared, and the 3-way handshake proceeds normally once the
+                        accepted), the adjacency transitions to Down, last-*-timestamp-seen
+                        variables are cleared, and the 3-way handshake proceeds normally once the
                         rebooted node acquires a clock.
                     </li>
                     <li>
@@ -459,7 +437,7 @@
                         derived Proxy Time will be higher than any previously sent
                         timestamp. The node can then send an IIH with this Proxy Time
                         which will be accepted by the neighbor (it is greater than
-                        last-timestamp-seen), allowing the adjacency to recover without
+                        last-iih-timestamp-seen), allowing the adjacency to recover without
                         waiting for the hold timer.
                     </li>
                 </ul>
@@ -471,7 +449,10 @@
 
             <t>The following diagrams illustrate the temporal relationships between
                 originating timestamp, originating lifetime, LSP remaining lifetime, and
-                the acceptance window.</t>
+                the acceptance window.
+
+                    We use the term time-in-transit to indicate (originating lifetime - current lsp lifetime).
+            </t>
 
             <figure align="left">
                 <artwork align="left" type="ascii-art"><![CDATA[
@@ -499,8 +480,7 @@ Acceptance window for (orig_ts + lsp_lifetime):
         |                                            |
         | now - L                            now + L |
 
-  - orig_ts + (orig_lifetime - lsp_lifetime) must fall
-    within [now - |L, now + |L]
+  - orig_ts + time-in-transit must fall within [now - |L, now + |L]
   - lsp_lifetime must be ≤ orig_lifetime
   - orig_ts + time-in-transit must be > last accepted timestamp (strictly monotonic)
 ]]></artwork>
@@ -508,7 +488,7 @@ Acceptance window for (orig_ts + lsp_lifetime):
 
             <t>
                 A node MUST track per LSP fragment the timestamp value last accepted
-                (the "last-fragment-timestamp-seen"). This variable is set when a
+                as the "last-fragment-timestamp-seen". This variable is set when a
                 timestamped fragment is accepted and is used to enforce monotonicity
                 across successive instances of the same fragment. If a newer, authenticated fragment
                 (as determined by standard IS-IS fragment comparison rules) arrives
@@ -516,13 +496,12 @@ Acceptance window for (orig_ts + lsp_lifetime):
                 last-fragment-timestamp-seen MUST be cleared for that fragment. This
                 covers the case of a node that was downgraded or lost its clock and is
                 re-originating without timestamps. To prevent a chain of attacks
-                with pre-recorded higher fragment version numbers without timestamp a node
+                with pre-recorded higher fragment version numbers without timestamps a node
                 MAY decide to issue timestamped newer versions the fragment
                 with a large increment in case of such an attack.
             </t>
 
-                <t>
-                We use the term time-in-transit to indicate (originating lifetime - LSP lifetime).</t>
+
 
             <t>
             When timestamped, LSPs packets which are not purges and trigger any of the criteria corresponding to
@@ -533,7 +512,7 @@ Acceptance window for (orig_ts + lsp_lifetime):
                     LSP lifetime larger than originating lifetime
                 </li>
                 <li>
-                    originating timestamp + time-in-transit deviating more than |L from current local time
+                    (originating timestamp + time-in-transit) deviating more than |L from current local time
                 </li>
                 <li>
                     (originating timestamp + time-in-transit)
@@ -615,7 +594,7 @@ Acceptance window for (orig_ts + lsp_lifetime):
                     of samples, the value one above the index of 1/2 of the samples must be used to
                     prevent attacks when only 2 adjacencies are established.
                     This thwarts replay attackers
-                    controlling fewer than 50% of the eligible adjacencies.I
+                    controlling fewer than 50% of the eligible adjacencies.
                 </li>
                 <li>
                     The new Proxy Time is set to:
@@ -637,7 +616,7 @@ Acceptance window for (orig_ts + lsp_lifetime):
             </t>
             <t>
                 A node operating with Proxy Time MUST set the P-Bit on all timestamps it
-                originates (in IIHs, SNPs and LSPs).
+                originates (in IIHs, SNPs, ASHs and LSPs).
             </t>
         </section>
 
@@ -690,25 +669,11 @@ Acceptance window for (orig_ts + lsp_lifetime):
 
         <section title="Acknowledgments">
             <t>
-            Many thanks to Joel Halpern for thorough review, comments and initial idea of proxy clock.</t>
+            TBD
+            </t>
         </section>
 
-        <section title="Yang Extensions for Database Fingerprint">
-            <t>
-                To allow for quick validation of database synchronization across all nodes a node can implement
-                yang extensions providing the checksum of all fragments per level. The extension includes the
-                time difference from the last fingerprint change which facilitates measurement of flooding behavior
-                across the network.
-            </t>
-
-            <t>
-                Aged out LSPs are excluded from the fingerprint calculation.
-            </t>
-
-            <t>
-                Reference checksum algorithm for a fragment is given in <xref target="csum_algo"/>. The overall fingerprint
-                is the XOR of all fragment checksums.
-            </t>
+        <section title="Yang Extensions for Fragment Timestamping">
 
             <section title="Tree for the YANG Data Model">
               <t>This document uses the graphical representation of data models per <xref target="RFC8340"/>.</t>
@@ -718,12 +683,6 @@ Acceptance window for (orig_ts + lsp_lifetime):
 
         augment /rt:routing/rt:control-plane-protocols
                   /rt:control-plane-protocol/isis:isis
-                  /isis:database/isis:levels:
-          +--rw fingerprint
-             +--rw value?         uint64
-             +--rw last-update?   uint32
-        augment /rt:routing/rt:control-plane-protocols
-                  /rt:control-plane-protocol/isis:isis
                   /isis:database/isis:levels/isis:lsp:
           +--rw fragment-origination-time?   yang:date-and-time
               ]]></artwork>
@@ -731,7 +690,7 @@ Acceptance window for (orig_ts + lsp_lifetime):
 
       <section title="YANG Data Model">
         <t>The following is the YANG module:</t>
-        <sourcecode name="ietf-isis-fragment-timestamping@2026-01-14.yang" type="" markers="true"><![CDATA[
+        <sourcecode name="ietf-isis-fragment-timestamping@2026-06-26.yang" type="" markers="true"><![CDATA[
 module ietf-isis-fragment-timestamping {
   yang-version 1.1;
   namespace "urn:ietf:params:xml:ns:yang:ietf-isis-timestamping";
@@ -758,21 +717,16 @@ module ietf-isis-fragment-timestamping {
     "IETF LSR - LSR Working Group";
   contact
     "WG Web:   <https://datatracker.ietf.org/wg/lsr>
-     WG List:  <mailto:mpls@ietf.org>
+     WG List:  <mailto:lsr@ietf.org>
 
-     Author:    Tony Przygienda
-               <mailto:prz@juniper.net>
-     Author:    Colby Barth
-               <cbarth@juniper.net>
      Author:    Renato Westphal
                <renato@netdef.org>
     ";
   description
     "The YANG module augments the base IS-IS YANG data model with
-     operational state related to IS-IS fragment timestamping and
-     LSDB fingerprinting.
+     operational state related to IS-IS fragment timestamping.
 
-     Copyright (c) 2025 IETF Trust and the persons identified as
+     Copyright (c) 2026 IETF Trust and the persons identified as
      authors of the code.  All rights reserved.
 
      Redistribution and use in source and binary forms, with or
@@ -794,50 +748,11 @@ module ietf-isis-fragment-timestamping {
   reference
     "RFC XXXX: Optional IS-IS Fragment Timestamping";
 
-  revision 2026-01-14 {
+  revision 2026-06-26 {
     description
       "Initial Version";
     reference
       "RFC XXXX: Optional IS-IS Fragment Timestamping";
-  }
-
-  /* LSDB fingerprint */
-
-  augment "/rt:routing/rt:control-plane-protocols/"
-        + "rt:control-plane-protocol/isis:isis/isis:database/"
-        + "isis:levels" {
-    when "derived-from-or-self(../../../rt:type, 'isis:isis')" {
-      description
-        "This augment ISIS routing protocol when used";
-    }
-    container fingerprint {
-      description
-        "Information about the LSDB fingerprint for this level.";
-      leaf value {
-        type uint64;
-        description
-          "A 64-bit fingerprint derived from the set of LSPs at this
-           level.
-
-           The fingerprint is computed by XOR-combining a per-LSP
-           component value for each LSP whose remaining lifetime is
-           non-zero. The per-LSP component value is derived from the
-           LSP identifier, the LSP checksum, and the LSP length, as
-           specified in Appendix A of RFC XXXX.
-
-           The fingerprint is intended for detecting potential LSDB
-           synchronization differences. Different values indicate
-           different LSDB contents; identical values do not guarantee
-           equivalence due to possible collisions.";
-      }
-      leaf last-update {
-        type uint32;
-        units "seconds";
-        description
-          "Time elapsed since the fingerprint for this level's LSDB
-           was last updated.";
-      }
-    }
   }
 
   /* Fragment Timestamp TLV */
@@ -929,30 +844,6 @@ module ietf-isis-fragment-timestamping {
             <xi:include href='https://xml2rfc.tools.ietf.org/public/rfc/bibxml/reference.RFC.8877.xml'/>
 
         </references> <!-- end of informative references -->
-
-        <section title="Checksum Reference Algorithm" anchor="csum_algo">
-
-            <figure>
-                <artwork align="center" name="" type="" alt=""><![CDATA[
-<CODE BEGINS>
-    pub(crate) fn lsdb_fingerprint_component(&self) -> u64 {
-        let mut result: u64 = 0;
-        let system_id: &[u8] = self.lsp_id.system_id.as_ref();
-        for i in system_id.iter().chain(&[self.lsp_id.pseudonode]) {
-            result <<= 8;
-            result ^= *i as u64;
-        }
-        // fragment checksum
-        result ^= (self.cksum as u64) << 48;
-        // This is equal to the PDU length advertised by the fragment
-        result ^= (self.raw.len() as u64) << 32;
-        result
-    }
-<CODE ENDS>
-]]></artwork>
-            </figure>
-
-        </section>
 
     </back>
 

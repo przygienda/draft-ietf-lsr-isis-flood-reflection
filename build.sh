@@ -35,6 +35,7 @@ echo -- disttopo
 D1=draft-lsr-distopflood
 D2=draft-rigatoni-lsr-isis-fragment-timestamping
 D3=draft-ietf-lsr-flood-reduction-arch
+D4=draft-westphal-lsr-isis-database-checksumming
 
 for D in $D2
 do
