@@ -477,7 +477,7 @@
                 <artwork align="left" type="ascii-art"><![CDATA[
 Normal LSP in transit:
 
-  orig_ts                          now             orig_ts + orig_lifetime
+  orig_ts                          now     orig_ts + orig_lifetime
   |                                 |                       |
   |=================================|=======================|
   |<--- elapsed since origination ->|<-- lsp_lifetime ----->|
@@ -493,15 +493,16 @@ Normal LSP in transit:
                 <artwork align="left" type="ascii-art"><![CDATA[
 Acceptance window for (orig_ts + lsp_lifetime):
 
-        |L|                   now                          |L|
-        <->                    |                           <->
-     REJECT |<============ ACCEPT WINDOW ===============>| REJECT
-            |                                            |
-            | now - L                            now + L |
+    |L|                   now                          |L|
+    <->                    |                           <->
+ REJECT |<============ ACCEPT WINDOW ===============>| REJECT
+        |                                            |
+        | now - L                            now + L |
 
-  - orig_ts + lsp_lifetime must fall within [now - |L, now + |L]
-  - lsp_lifetime must be ≤ orig_lifetime (no inflation)
-  - orig_ts must be > last accepted timestamp (strictly monotonic)
+  - orig_ts + (orig_lifetime - lsp_lifetime) must fall
+    within [now - |L, now + |L]
+  - lsp_lifetime must be ≤ orig_lifetime
+  - orig_ts + time-in-transit must be > last accepted timestamp (strictly monotonic)
 ]]></artwork>
             </figure>
 
@@ -509,7 +510,7 @@ Acceptance window for (orig_ts + lsp_lifetime):
                 A node MUST track per LSP fragment the timestamp value last accepted
                 (the "last-fragment-timestamp-seen"). This variable is set when a
                 timestamped fragment is accepted and is used to enforce monotonicity
-                across successive instances of the same fragment. If a newer fragment
+                across successive instances of the same fragment. If a newer, authenticated fragment
                 (as determined by standard IS-IS fragment comparison rules) arrives
                 without an LSP Timestamp TLV, it MUST be accepted normally and
                 last-fragment-timestamp-seen MUST be cleared for that fragment. This
@@ -518,8 +519,10 @@ Acceptance window for (orig_ts + lsp_lifetime):
                 with pre-recorded higher fragment version numbers without timestamp a node
                 MAY decide to issue timestamped newer versions the fragment
                 with a large increment in case of such an attack.
-
             </t>
+
+                <t>
+                We use the term time-in-transit to indicate (originating lifetime - LSP lifetime).</t>
 
             <t>
             When timestamped, LSPs packets which are not purges and trigger any of the criteria corresponding to
@@ -530,10 +533,11 @@ Acceptance window for (orig_ts + lsp_lifetime):
                     LSP lifetime larger than originating lifetime
                 </li>
                 <li>
-                    (originating timestamp + LSP lifetime) deviating more than |L from current local time
+                    originating timestamp + time-in-transit deviating more than |L from current local time
                 </li>
                 <li>
-                    originating timestamp smaller than last-fragment-timestamp-seen (except purges)
+                    (originating timestamp + time-in-transit)
+                    smaller than last-fragment-timestamp-seen (except purges)
                 </li>
             </ol>
             <t>
