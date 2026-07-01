@@ -33,7 +33,7 @@ echo '*** in expanded xml'
 
 echo -- disttopo
 D1=draft-lsr-distopflood
-D2=draft-rigatoni-lsr-isis-fragment-timestamping
+D2=draft-many-lsr-isis-packet-timestamping
 D3=draft-ietf-lsr-flood-reduction-arch
 D4=draft-westphal-lsr-isis-database-checksumming
 
