@@ -16,7 +16,7 @@
 
     <front>
 
-        <title>Optional IS-IS Packet Timestamping</title>
+        <title>IS-IS Packet Timestamping</title>
 
         <author initials='T.' surname='Przygienda' fullname='Tony Przygienda'>
             <organization>HPE Juniper Networking</organization>
@@ -42,10 +42,9 @@
         <author initials='J.' surname='Halpern' fullname='Joel Halpern'>
             <organization>HPE Juniper Networking</organization>
             <address>
-                <email>anthony.li@hpe.com</email>
+                <email>joel.halpern@hpe.com</email>
             </address>
         </author>
-        <date/>
         <date/>
 
         <abstract>
