@@ -8,7 +8,7 @@
 <?rfc compact="yes" ?>
 <?rfc subcompact="no" ?>
 <rfc xmlns:xi="http://www.w3.org/2001/XInclude" category="std"
-     docName="draft-ietf-lsr-flood-reduction-arch-01" ipr="trust200902"
+     docName="draft-ietf-lsr-flood-reduction-arch-02" ipr="trust200902"
      obsoletes="" updates="" submissionType="IETF" xml:lang="en" tocInclude="true" tocDepth="3"
      consensus="true" symRefs="true" sortRefs="true" version="3">
 
@@ -904,14 +904,15 @@ module ietf-ospf-flooding-reduction-algo {
             No further IANA action is required.
           </t>  
         </section>
-        <section anchor="IGP-Flooding-Algo" title="IGP Flooding Reduction Algorithm Capabiity">
+        <section anchor="IGP-Flooding-Algo" title="IGP Flooding Reduction Algorithm Capability">
         <t>
           This section requests that IANA reserve a single value from each of the following registries.
           Both should be named: "Flood Reduction Algorithm".
         </t>
         <ul>
           <li>
-            IS-IS Sub-TLVs for IS-IS Router CAPABILITY TLV Registry (from within the 1-32767 range)
+            IS-IS Sub-TLVs for IS-IS Router CAPABILITY TLV Registry obtained an early allocation under
+              "Flood Reduction Algorithm"
           </li>
           <li>
             OSPF Router Information (RI) TLVs Registry

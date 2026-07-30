@@ -15,7 +15,7 @@
     15	
     16	
     17	                  IS-IS Distributed Flooding Reduction
-    18	                     draft-ietf-lsr-distoptflood-14
+    18	                     draft-ietf-lsr-distoptflood-15
     19	
     20	Abstract
     21	
@@ -620,12 +620,12 @@
    620	
    621	   Shraddha Hegde
    622	   Juniper Networks
-   623	   Email: shraddha@juniper.net
+   623	   Email: shraddha.hedge@hpe.net
    624	
    625	
    626	   Tony Przygienda
    627	   Juniper Networks
-   628	   Email: prz@juniper.net
+   628	   Email: antoni.przygienda@hpe.net
    629	
    630	
    631	   Luay Jalil

@@ -15,7 +15,7 @@ Expires: 31 January 2027                                   T. Przygienda
 
 
                   IS-IS Distributed Flooding Reduction
-                     draft-ietf-lsr-distoptflood-14
+                     draft-ietf-lsr-distoptflood-15
 
 Abstract
 
@@ -619,12 +619,12 @@ Internet-Draft    IS-IS Distributed Flooding Reduction         July 2026
 
 
    Shraddha Hegde
-   HPE Juniper Networks
+   Juniper Networks
    Email: shraddha.hedge@hpe.net
 
 
    Tony Przygienda
-   HPE Juniper Networks
+   Juniper Networks
    Email: antoni.przygienda@hpe.net
 
 

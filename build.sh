@@ -37,7 +37,7 @@ D2=draft-many-lsr-isis-packet-timestamping
 D3=draft-ietf-lsr-flood-reduction-arch
 D4=draft-westphal-lsr-isis-database-checksumming
 
-for D in $D1 $D2
+for D in $D1 $D2 $D3
 do
   xml2rfc --allow-local-file-access --text $D.xml
   xml2rfc --allow-local-file-access --html $D.xml
