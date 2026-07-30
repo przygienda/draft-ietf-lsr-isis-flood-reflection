@@ -10,7 +10,7 @@
 <?rfc sortrefs="yes" ?>
 <?rfc compact="yes" ?>
 <?rfc subcompact="no" ?>
-<rfc xmlns:xi="http://www.w3.org/2001/XInclude" category="std" docName="draft-ietf-lsr-distoptflood-13"
+<rfc xmlns:xi="http://www.w3.org/2001/XInclude" category="std" docName="draft-ietf-lsr-distoptflood-15"
      ipr="trust200902" obsoletes="" updates="" submissionType="IETF" xml:lang="en"
      tocInclude="true" tocDepth="3" symRefs="true" sortRefs="true" version="3">
 
@@ -21,7 +21,7 @@
         <title>IS-IS Distributed Flooding Reduction</title>
 
         <author initials='R.' surname='White' fullname='Russ White'>
-            <organization>Akamai</organization>
+            <organization>Nokia</organization>
             <address>
                 <email>russ@riw.us</email>
             </address>
@@ -30,14 +30,14 @@
         <author initials='S.' surname='Hegde' fullname='Shraddha Hegde'>
             <organization>Juniper Networks</organization>
             <address>
-                <email>shraddha@juniper.net</email>
+                <email>shraddha.hedge@hpe.net</email>
             </address>
         </author>
 
         <author initials='T.' surname='Przygienda' fullname='Tony Przygienda'>
             <organization>Juniper Networks</organization>
             <address>
-                <email>prz@juniper.net</email>
+                <email>antoni.przygienda@hpe.net</email>
             </address>
         </author>
 
@@ -51,7 +51,7 @@
         <author initials='D.' surname='Voyer' fullname='Daniel Voyer'>
             <organization>Cisco</organization>
             <address>
-                <email>?@cisco.com</email>
+                <email>danvoyerwork@gmail.com</email>
             </address>
 
         </author>
@@ -582,10 +582,12 @@
 
 
         <section anchor="IGP_IANA" title="IANA Section">
-            <t>IANA is requested to allocate a TBD value in 1-127 range with description of "Modified MANET Reduction" further referring to
-                this document as specification in the "IGP Algorithm Type For Computing Flooding Topology" registry.
-
+            <t>
+                IANA provided currently an early allocation of value for the
+                algorithm under "Modified MANET Reduction" in the "IGP Algorithm Type For Computing Flooding Topology"
+                registry.
             </t>
+
 
 
             <!--

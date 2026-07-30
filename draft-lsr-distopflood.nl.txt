@@ -3,19 +3,19 @@
      3	
      4	
      5	Network Working Group                                           R. White
-     6	Internet-Draft                                                    Akamai
+     6	Internet-Draft                                                     Nokia
      7	Intended status: Standards Track                                S. Hegde
-     8	Expires: 26 July 2026                                      T. Przygienda
+     8	Expires: 31 January 2027                                   T. Przygienda
      9	                                                        Juniper Networks
     10	                                                                L. Jalil
     11	                                                                 Verizon
     12	                                                                D. Voyer
     13	                                                                   Cisco
-    14	                                                         22 January 2026
+    14	                                                            30 July 2026
     15	
     16	
     17	                  IS-IS Distributed Flooding Reduction
-    18	                     draft-ietf-lsr-distoptflood-13
+    18	                     draft-ietf-lsr-distoptflood-14
     19	
     20	Abstract
     21	
@@ -53,12 +53,12 @@
     53	
     54	
     55	
-    56	White, et al.             Expires 26 July 2026                  [Page 1]
+    56	White, et al.            Expires 31 January 2027                [Page 1]
     57	
-    58	Internet-Draft    IS-IS Distributed Flooding Reduction      January 2026
+    58	Internet-Draft    IS-IS Distributed Flooding Reduction         July 2026
     59	
     60	
-    61	   This Internet-Draft will expire on 26 July 2026.
+    61	   This Internet-Draft will expire on 31 January 2027.
     62	
     63	Copyright Notice
     64	
@@ -109,9 +109,9 @@
    109	
    110	
    111	
-   112	White, et al.             Expires 26 July 2026                  [Page 2]
+   112	White, et al.            Expires 31 January 2027                [Page 2]
    113	
-   114	Internet-Draft    IS-IS Distributed Flooding Reduction      January 2026
+   114	Internet-Draft    IS-IS Distributed Flooding Reduction         July 2026
    115	
    116	
    117	1.1.  Empirical Evidence of Correctness and Efficiency Improvement
@@ -165,9 +165,9 @@
    165	
    166	
    167	
-   168	White, et al.             Expires 26 July 2026                  [Page 3]
+   168	White, et al.            Expires 31 January 2027                [Page 3]
    169	
-   170	Internet-Draft    IS-IS Distributed Flooding Reduction      January 2026
+   170	Internet-Draft    IS-IS Distributed Flooding Reduction         July 2026
    171	
    172	
    173	   +====+ +====+ +====+ +====+ +====+ +====+
@@ -221,9 +221,9 @@
    221	
    222	
    223	
-   224	White, et al.             Expires 26 July 2026                  [Page 4]
+   224	White, et al.            Expires 31 January 2027                [Page 4]
    225	
-   226	Internet-Draft    IS-IS Distributed Flooding Reduction      January 2026
+   226	Internet-Draft    IS-IS Distributed Flooding Reduction         July 2026
    227	
    228	
    229	   *  Stage 1: Forward Optimization
@@ -277,9 +277,9 @@
    277	
    278	
    279	
-   280	White, et al.             Expires 26 July 2026                  [Page 5]
+   280	White, et al.            Expires 31 January 2027                [Page 5]
    281	
-   282	Internet-Draft    IS-IS Distributed Flooding Reduction      January 2026
+   282	Internet-Draft    IS-IS Distributed Flooding Reduction         July 2026
    283	
    284	
    285	   using both a view of the network shared by all nodes (based on the
@@ -333,9 +333,9 @@
    333	
    334	
    335	
-   336	White, et al.             Expires 26 July 2026                  [Page 6]
+   336	White, et al.            Expires 31 January 2027                [Page 6]
    337	
-   338	Internet-Draft    IS-IS Distributed Flooding Reduction      January 2026
+   338	Internet-Draft    IS-IS Distributed Flooding Reduction         July 2026
    339	
    340	
    341	       i.    If the IS is the LSP originator, skip
@@ -389,9 +389,9 @@
    389	
    390	
    391	
-   392	White, et al.             Expires 26 July 2026                  [Page 7]
+   392	White, et al.            Expires 31 January 2027                [Page 7]
    393	
-   394	Internet-Draft    IS-IS Distributed Flooding Reduction      January 2026
+   394	Internet-Draft    IS-IS Distributed Flooding Reduction         July 2026
    395	
    396	
    397	   C)  If this member of the RNL signals capability to run or is running
@@ -445,9 +445,9 @@
    445	
    446	
    447	
-   448	White, et al.             Expires 26 July 2026                  [Page 8]
+   448	White, et al.            Expires 31 January 2027                [Page 8]
    449	
-   450	Internet-Draft    IS-IS Distributed Flooding Reduction      January 2026
+   450	Internet-Draft    IS-IS Distributed Flooding Reduction         July 2026
    451	
    452	
    453	   If any such re-synchronizations above a configurable threshold is
@@ -501,9 +501,9 @@
    501	
    502	
    503	
-   504	White, et al.             Expires 26 July 2026                  [Page 9]
+   504	White, et al.            Expires 31 January 2027                [Page 9]
    505	
-   506	Internet-Draft    IS-IS Distributed Flooding Reduction      January 2026
+   506	Internet-Draft    IS-IS Distributed Flooding Reduction         July 2026
    507	
    508	
    509	2.  Operational Considerations
@@ -530,36 +530,36 @@
    530	
    531	4.  IANA Section
    532	
-   533	   IANA is requested to allocate a TBD value in 1-127 range with
-   534	   description of "Modified MANET Reduction" further referring to this
-   535	   document as specification in the "IGP Algorithm Type For Computing
-   536	   Flooding Topology" registry.
-   537	
-   538	5.  Contributors
-   539	
-   540	   The following people have contributed to this draft or provided
-   541	   valuable comments and are mentioned without any particular order:
-   542	   Abhishek Kumar, Nikos Triantafillis, Ivan Pepelnjak, Christian
-   543	   Franke, Hannes Gredler, Les Ginsberg, Naiming Shen, Uma Chunduri,
-   544	   Nick Russo, Tony Li, Acee Lindem, Renato Westphal and Rodny Molina.
-   545	
-   546	6.  Normative References
-   547	
-   548	7.  Informative References
-   549	
-   550	   [RFC5120]  Przygienda, T., Shen, N., and N. Sheth, "M-ISIS: Multi
-   551	              Topology (MT) Routing in Intermediate System to
-   552	              Intermediate Systems (IS-ISs)", RFC 5120,
-   553	              DOI 10.17487/RFC5120, February 2008,
-   554	              <https://www.rfc-editor.org/info/rfc5120>.
+   533	   IANA provided currently an early allocation of value for the
+   534	   algorithm under "Modified MANET Reduction" in the "IGP Algorithm Type
+   535	   For Computing Flooding Topology" registry.
+   536	
+   537	5.  Contributors
+   538	
+   539	   The following people have contributed to this draft or provided
+   540	   valuable comments and are mentioned without any particular order:
+   541	   Abhishek Kumar, Nikos Triantafillis, Ivan Pepelnjak, Christian
+   542	   Franke, Hannes Gredler, Les Ginsberg, Naiming Shen, Uma Chunduri,
+   543	   Nick Russo, Tony Li, Acee Lindem, Renato Westphal and Rodny Molina.
+   544	
+   545	6.  Normative References
+   546	
+   547	7.  Informative References
+   548	
+   549	   [RFC5120]  Przygienda, T., Shen, N., and N. Sheth, "M-ISIS: Multi
+   550	              Topology (MT) Routing in Intermediate System to
+   551	              Intermediate Systems (IS-ISs)", RFC 5120,
+   552	              DOI 10.17487/RFC5120, February 2008,
+   553	              <https://www.rfc-editor.org/info/rfc5120>.
+   554	
    555	
    556	
    557	
    558	
    559	
-   560	White, et al.             Expires 26 July 2026                 [Page 10]
+   560	White, et al.            Expires 31 January 2027               [Page 10]
    561	
-   562	Internet-Draft    IS-IS Distributed Flooding Reduction      January 2026
+   562	Internet-Draft    IS-IS Distributed Flooding Reduction         July 2026
    563	
    564	
    565	   [RFC5304]  Li, T. and R. Atkinson, "IS-IS Cryptographic
@@ -606,16 +606,16 @@
    606	Authors' Addresses
    607	
    608	   Russ White
-   609	   Akamai
+   609	   Nokia
    610	   Email: russ@riw.us
    611	
    612	
    613	
    614	
    615	
-   616	White, et al.             Expires 26 July 2026                 [Page 11]
+   616	White, et al.            Expires 31 January 2027               [Page 11]
    617	
-   618	Internet-Draft    IS-IS Distributed Flooding Reduction      January 2026
+   618	Internet-Draft    IS-IS Distributed Flooding Reduction         July 2026
    619	
    620	
    621	   Shraddha Hegde
@@ -635,7 +635,7 @@
    635	
    636	   Daniel Voyer
    637	   Cisco
-   638	   Email: ?@cisco.com
+   638	   Email: danvoyerwork@gmail.com
    639	
    640	
    641	
@@ -669,4 +669,4 @@
    669	
    670	
    671	
-   672	White, et al.             Expires 26 July 2026                 [Page 12]
+   672	White, et al.            Expires 31 January 2027               [Page 12]
