@@ -1,8 +1,8 @@
-module ietf-isis-flooding-algo {
+module ietf-isis-flood-reduction-algo {
   yang-version 1.1;
   namespace "urn:ietf:params:xml:ns:yang:"
-          + "ietf-isis-flooding-algo";
-  prefix isis-flood-algo;
+          + "ietf-isis-flood-reduction-algo";
+  prefix isis-flood-reduce-algo;
 
   import ietf-routing {
     prefix rt;
@@ -15,10 +15,10 @@ module ietf-isis-flooding-algo {
     reference
       "RFC 9130: YANG Data Model for the IS-IS Protocol";
   }
-  import iana-igp-flooding-algo {
-    prefix iana-igp-flooding-algo;
+  import iana-igp-flooding-topo-algo {
+    prefix iana-igp-flood-algo;
     reference
-      "RFC XXXX: Flooding Reduction Algorithms Framework";
+      "RFC 9667: Dynamic Flooding on Dense Graphs";
   }
 
   organization
@@ -54,34 +54,33 @@ module ietf-isis-flooding-algo {
     description
       "Initial version";
     reference
-      "RFC XXXX: Flooding Reduction Algorithms Framework";
+      "RFC XXXX: IGP Flooding Reduction Algorithms Framework";
   }
-  
+
   /*
    * IS-IS Flooding Reduction Algorithm configuration
    */
-  grouping flooding-reduction-algo-config {
+
+  grouping flood-reduction-algo-config {
     description
       "Grouping for IS-IS flooding algorithm router
        configuration.";
-    container flooding-reduction-algo {
+    container flood-reduction-algo {
       description
         "IS-IS Level-1 flooding algorithm routing configuration.
          This containers includes configuration related to the the
          active flooding reduction algorithm.";
-      leaf flooding-reduction-algo {
-        type identityref {
-          base iana-igp-flooding-algo:flooding-reduction-algo;
-         }
+      leaf flood-reduction-algo {
+        type iana-igp-flood-algo:igp-flooding-topo-algo;
         description
           "Specifies the active flooding reduction algorithm
            in for IS-IS Level 1.
-           RFC XXXX: Flooding Reduction Algorithms Framework";
-        }
-     }
-  }  
+           RFC XXXX: IGP Flooding Reduction Algorithms Framework";
+      }
+    }
+  }
 
- augment "/rt:routing/"
+  augment "/rt:routing/"
         + "rt:control-plane-protocols/rt:control-plane-protocol"
         + "/isis:isis" {
     when "/rt:routing/rt:control-plane-protocols/"
@@ -93,41 +92,39 @@ module ietf-isis-flooding-algo {
       "This augments IS-IS with flooding reduction algorithm
        configuration.";
     container level-1 {
-      uses flooding-reduction-algo-config;
+      uses flood-reduction-algo-config;
       description
-        "IS-IS Level-1 Flooding Reduction Algorithm 
+        "IS-IS Level-1 Flooding Reduction Algorithm
          configuration.";
-    }  
+    }
     container level-2 {
-      uses flooding-reduction-algo-config;
+      uses flood-reduction-algo-config;
       description
-        "IS-IS Level-2 Flooding Reduction Algorithm 
+        "IS-IS Level-2 Flooding Reduction Algorithm
          configuration.";
-    }  
+    }
   }
 
   /*
    * IS-IS Flooding Reduction Algorithm Router Capabilities
    */
-  grouping router-flooding-algorithm-tlv {
+
+  grouping flood-reduction-algorithm-tlv {
     description
-      "Grouping for IS-IS router flooding algorithm capabilities
+      "Grouping for IS-IS flooding reduction algorithm
        TLV types.";
     reference
       "RFC 7981: IS-IS Extensions for Advertising Router
                  Information
        RFC XXXX: Flooding Reduction Algorithms Framework";
-                                                      
-    container router-flooding-algo-tlv {
+    container flood-reduction-algo-tlv {
       description
         "IS-IS Router Flooding Algorithm TLV.";
-      leaf active-flooding-algo {
-        type identityref {
-          base iana-igp-flooding-algo:flooding-reduction-algo;
-        }
+      leaf flood-reduction-algo {
+        type iana-igp-flood-algo:igp-flooding-topo-algo;
         description
           "Flooding reduction algorithm active in the
-          IS-IS routing domain";
+           IS-IS routing domain";
         reference
           "RFC 7981: IS-IS Extensions for Advertising Router
                      Information
@@ -135,6 +132,7 @@ module ietf-isis-flooding-algo {
       }
     }
   }
+
   augment "/rt:routing/"
         + "rt:control-plane-protocols/rt:control-plane-protocol"
         + "/isis:isis/isis:database/isis:levels/isis:lsp"
@@ -147,6 +145,6 @@ module ietf-isis-flooding-algo {
     }
     description
       "This augments IS-IS protocol LSDB router capability.";
-    uses router-flooding-algorithm-tlv;
+    uses flood-reduction-algorithm-tlv;
   }
 }

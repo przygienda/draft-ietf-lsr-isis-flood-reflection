@@ -1,7 +1,7 @@
-module ietf-ospf-flooding-reduction-algo {
+module ietf-ospf-flood-reduction-algo {
   yang-version 1.1;
   namespace "urn:ietf:params:xml:ns:yang:"
-          + "ietf-ospf-flooding-reduction-algo";
+          + "ietf-ospf-flood-reduction-algo";
   prefix ospf-fc;
 
   import ietf-routing {
@@ -18,7 +18,7 @@ module ietf-ospf-flooding-reduction-algo {
   import iana-igp-flooding-topo-algo {
     prefix iana-igp-flood-algo;
     reference
-      "RFC 9667: Dynamic Flooding on Dense Graphs";
+      "RFC XXXX: Flooding Reduction Algorithms Framework";
   }
 
   organization
@@ -30,9 +30,9 @@ module ietf-ospf-flooding-reduction-algo {
      Author:   Acee Lindem
                <mailto:acee.ietf@gmail.com>";
   description
-    "This YANG module defines the configuration and operational
-     state for the flooding reduction algorithms in OSPF as
-     defined in RFC XXXX.
+    "This YANG module defines the operational state for
+     the flooding reduction algorithm  in OSPF as defined
+     in RFC XXXX.
 
      Copyright (c) 2026 IETF Trust and the persons identified as
      authors of the code.  All rights reserved.
@@ -50,31 +50,29 @@ module ietf-ospf-flooding-reduction-algo {
      This version of this YANG module is part of RFC XXXX; see
      the RFC itself for full legal notices.";
 
-  revision 2026-02-10 {
+  revision 2026-08-13 {
     description
       "Initial version";
     reference
-      "RFC XXXX: IGP Flooding Reduction Algorithms Framework";
+      "RFC XXXX: Flooding Reduction Algorithms Framework";
   }
 
-  grouping flooding-reduction-algorithm-tlv {
+  grouping router-flood-reduction-algo-tlv {
     description
-      "Grouping for OSPF flooding algorithm capabilities
+      "Grouping for OSPF router flooding algorithm capabilities
        TLV types.";
     reference
       "RFC 7770: Extensions to OSPF for Advertising Optional
                  Router Capabilities
-       RFC XXXX: IGP Flooding Reduction Algorithms Framework";
-    container flooding-reduction-algo-tlv {
+       RFC XXXX: Flooding Reduction Algorithms Framework";
+    container router-flood-reduction-algo-tlv {
       description
-        "OSPF Flooding Reduction Algorithm TLV.";
-      leaf flooding-reduction-algo {
-        type identityref {
-          base iana-igp-flood-algo:igp-flooding-topo-algo;
-        }
+        "OSPF Router Flooding Algorithm TLV.";
+      leaf active-flooding-algo {
+        type iana-igp-flood-algo:igp-flooding-topo-algo;
         description
           "Flooding reduction algorithm active in the
-           OSPF routing domain area
+           OSPF routing domain
            RFC XXXX: Flooding Reduction Algorithms Framework";
       }
     }
@@ -96,17 +94,15 @@ module ietf-ospf-flooding-reduction-algo {
     }
     container flooding-reduction-algo {
       description
-        "OSPF area-level flooding reduction algorithm routing
-         configuration. This container includes configuration related
-         to the the active flooding reduction algorithm.";
+        "OSPF area level flooding algorithm routing configuration.
+         This containers includes configuration related to the the
+         active flooding reduction algorithm.";
       leaf flooding-reduction-algo {
-        type identityref {
-          base iana-igp-flood-algo:igp-flooding-topo-algo;
-        }
+        type iana-igp-flood-algo:igp-flooding-topo-algo;
         description
           "Specifies the active flooding reduction algorithm
            in the OSPF area.
-           RFC XXXX: IGP Flooding Reduction Algorithms Framework";
+           RFC XXXX: Flooding Reduction Algorithms Framework";
       }
     }
     description
@@ -135,11 +131,10 @@ module ietf-ospf-flooding-reduction-algo {
     description
       "OSPFv2 Opaque Area-Scoped Router-Information LSA Router
        Functional capabilities.";
-    uses flooding-reduction-algorithm-tlv;
+    uses router-flood-reduction-algo-tlv;
     reference
       "RFC 7770: Extensions to OSPF for Advertising Optional
-                 Router Capabilities
-       RFC XXXX: IGP Flooding Reduction Algorithms Framework";
+                 Router Capabilities";
   }
 
   /*
@@ -148,10 +143,10 @@ module ietf-ospf-flooding-reduction-algo {
 
   augment "/rt:routing/"
         + "rt:control-plane-protocols/rt:control-plane-protocol/"
-        + "ospf:ospf/ospf:areas/"
-        + "ospf:area/ospf:database/"
-        + "ospf:area-scope-lsa-type/ospf:area-scope-lsas/"
-        + "ospf:area-scope-lsa/ospf:version/ospf:ospfv3/"
+        + "ospf:ospf/ospf:areas/ospf:area/"
+        + "ospf:interfaces/ospf:interface/ospf:database/"
+        + "ospf:link-scope-lsa-type/ospf:link-scope-lsas/"
+        + "ospf:link-scope-lsa/ospf:version/ospf:ospfv3/"
         + "ospf:ospfv3/ospf:body/ospf:router-information" {
     when "derived-from-or-self(/rt:routing/"
        + "rt:control-plane-protocols/"
@@ -160,12 +155,12 @@ module ietf-ospf-flooding-reduction-algo {
         "This augmentation is only valid for OSPFv3.";
     }
     description
-      "OSPFv3 Area-Scoped Router-Information LSA Router
+      "OSPFv3 Link-Scoped Router-Information LSA Router
        Functional capabilities.";
-    uses flooding-reduction-algorithm-tlv;
+    uses router-flood-reduction-algo-tlv;
     reference
       "RFC 7770: Extensions to OSPF for Advertising Optional
                  Router Capabilities
-       RFC XXXX: IGP Flooding Reduction Algorithms Framework";
+       RFC XXXX: Flooding Reduction Algorithms Framework";
   }
 }

@@ -44,18 +44,50 @@ module iana-igp-flooding-topo-algo {
      The latest version of this YANG module is available at
      https://www.iana.org/assignments/yang-parameters.";
 
-  revision 2026-02-10 {
+  revision 2026-08-13 {
     description
       "Initial version";
     reference
       "RFC 9667: Dynamic Flooding on Dense Graphs";
   }
 
-  identity igp-flooding-topo-algo {
+  typedef igp-flooding-topo-algo {
+    type enumeration {
+      enum reserved-centralized-mode {
+        value 0;
+        description
+          "Reserved - Centralized mode.";
+        reference
+          "RFC 9667: Dynamic Flooding on Dense Graphs";
+      }
+      enum reserved-first-private-algo {
+        value 128;
+        description
+          "Reserved - First private flooding reduction algorithm.";
+        reference
+          "RFC 9667: Dynamic Flooding on Dense Graphs";
+      }
+      enum reserved-last-private-algo {
+        value 254;
+        description
+          "Reserved - Last private flooding reduction algorithm.";
+        reference
+          "RFC 9667: Dynamic Flooding on Dense Graphs";
+      }
+      enum reserved-last-algo {
+        value 255;
+        description
+          "Reserved - Last alogorithm.";
+        reference
+          "RFC 9667: Dynamic Flooding on Dense Graphs";
+      }
+    }
     description
-      "Base identity for IGP algorithms for computing flooding
-       topologies. Algorithms are defined in the 'IGP Algorithm
+      "IGP algorithms for computing flooding topologies
+       Algorithms are defined in the 'IGP Algorithm
        Type for Computing Flooding Topology' in the 'Interior
        Gateway Protocol (IGP) Parameters' registry group.";
+    reference
+      "RFC 9667: Dynamic Flooding on Dense Graphs";
   }
 }
