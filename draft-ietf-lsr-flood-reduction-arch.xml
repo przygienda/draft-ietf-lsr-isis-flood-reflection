@@ -611,7 +611,7 @@ module ietf-isis-flood-reduction-algo {
   yang-version 1.1;
   namespace "urn:ietf:params:xml:ns:yang:"
           + "ietf-isis-flood-reduction-algo";
-  prefix isis-flood-reduce-algo;
+  prefix isis-flood-reduction-algo;
 
   import ietf-routing {
     prefix rt;
@@ -764,7 +764,7 @@ module ietf-ospf-flood-reduction-algo {
   yang-version 1.1;
   namespace "urn:ietf:params:xml:ns:yang:"
           + "ietf-ospf-flood-reduction-algo";
-  prefix ospf-fc;
+  prefix ospf-flood-reduction-algo;
 
   import ietf-routing {
     prefix rt;
@@ -951,7 +951,64 @@ module ietf-ospf-flood-reduction-algo {
             OSPF Router Information (RI) TLVs Registry
           </li>
         </ul>
-    </section>
+        </section>
+      <section numbered="true" toc="default">
+        <name slugifiedName="name-registering-yang-modules">Registering YANG Modules</name>
+        <t>
+          This document registers URIs in the IETF XML registry
+          <xref target="RFC3688" format="default"/>.  Following the format in
+          <xref target="RFC3688" format="default"/>,
+          the following registrations are requested to be made:
+        </t>
+
+      <artwork name="" type="" align="left" alt=""><![CDATA[
+   URI: urn:ietf:params:xml:ns:yang:iana-igp-flooding-topo-algo
+   Registrant Contact: The IESG.
+   XML: N/A, the requested URI is an XML namespace.
+   ]]></artwork>
+
+      <artwork name="" type="" align="left" alt=""><![CDATA[
+   URI: urn:ietf:params:xml:ns:yang:ietf-isis-flood-reduction-algo
+   Registrant Contact: The IESG.
+   XML: N/A, the requested URI is an XML namespace.
+   ]]></artwork>
+
+      <artwork name="" type="" align="left" alt=""><![CDATA[
+   URI: urn:ietf:params:xml:ns:yang:ietf-ospf-flood-reduction-algo
+   Registrant Contact: The IESG.
+   XML: N/A, the requested URI is an XML namespace.
+   ]]></artwork>
+
+      <t>This document registers the YANG modules in the YANG Module Names
+   registry <xref target="RFC6020" format="default"/>.
+      </t>
+
+
+      <artwork name="" type="" align="left" alt=""><![CDATA[
+name: iana-igp-flooding-topo-algo
+Maintained by IANA?  Y
+namespace: urn:ietf:params:xml:ns:yang:iana-igp-flooding-topo-algo
+prefix: iana-igp-flood-topo-algo
+reference: RFC XXXX
+   ]]></artwork>
+
+      <artwork name="" type="" align="left" alt=""><![CDATA[
+name: ietf-isis-flood-reduction-algo
+Maintained by IANA?  N
+namespace: urn:ietf:params:xml:ns:yang:ietf-isis-flood-reduction-algo
+prefix: isis-flood-reduction-algo
+reference: RFC XXXX
+   ]]></artwork>
+
+      <artwork name="" type="" align="left" alt=""><![CDATA[
+name: ietf-ospf-flood-reduction-algo
+Maintained by IANA?  N
+namespace: urn:ietf:params:xml:ns:yang:ietf-ospf-flood-reduction-algo
+prefix: ospf-flood-reduction-algo
+reference: RFC XXXX
+   ]]></artwork>
+ </section>
+        
     </section>
         <section title="Security Considerations" toc="default">
             <t>
@@ -1009,6 +1066,8 @@ module ietf-ospf-flood-reduction-algo {
     <back>
 
         <references title="Normative References">
+            <xi:include href='https://xml2rfc.tools.ietf.org/public/rfc/bibxml/reference.RFC.3688.xml'/>
+            <xi:include href='https://xml2rfc.tools.ietf.org/public/rfc/bibxml/reference.RFC.6020.xml'/>
             <xi:include href='https://xml2rfc.tools.ietf.org/public/rfc/bibxml/reference.RFC.6241.xml'/>
             <xi:include href='https://xml2rfc.tools.ietf.org/public/rfc/bibxml/reference.RFC.7981.xml'/>
             <xi:include href='https://xml2rfc.tools.ietf.org/public/rfc/bibxml/reference.RFC.7770.xml'/>

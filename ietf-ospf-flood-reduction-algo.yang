@@ -2,7 +2,7 @@ module ietf-ospf-flood-reduction-algo {
   yang-version 1.1;
   namespace "urn:ietf:params:xml:ns:yang:"
           + "ietf-ospf-flood-reduction-algo";
-  prefix ospf-fc;
+  prefix ospf-flood-reduction-algo;
 
   import ietf-routing {
     prefix rt;

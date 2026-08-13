@@ -2,7 +2,7 @@ module ietf-isis-flood-reduction-algo {
   yang-version 1.1;
   namespace "urn:ietf:params:xml:ns:yang:"
           + "ietf-isis-flood-reduction-algo";
-  prefix isis-flood-reduce-algo;
+  prefix isis-flood-reduction-algo;
 
   import ietf-routing {
     prefix rt;
