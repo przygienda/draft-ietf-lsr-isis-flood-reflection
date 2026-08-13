@@ -31,7 +31,7 @@ module ietf-isis-flood-reduction-algo {
                <mailto:acee.ietf@gmail.com>";
   description
     "This YANG module defines the operational state for
-     the flooding reduction algorithm in IS-IS as defined
+     the flood reduction algorithm in IS-IS as defined
      in RFC XXXX.
 
      Copyright (c) 2026 IETF Trust and the persons identified as
@@ -58,22 +58,22 @@ module ietf-isis-flood-reduction-algo {
   }
 
   /*
-   * IS-IS Flooding Reduction Algorithm configuration
+   * IS-IS Flood Reduction Algorithm configuration
    */
 
   grouping flood-reduction-algo-config {
     description
-      "Grouping for IS-IS flooding algorithm router
+      "Grouping for IS-IS flood reduction algorithm router
        configuration.";
     container flood-reduction-algo {
       description
-        "IS-IS Level-1 flooding algorithm routing configuration.
-         This containers includes configuration related to the the
-         active flooding reduction algorithm.";
+        "IS-IS Level-1 flood reduction algorithm routing
+         configuration. This containers includes configuration
+         related to the the active flood reduction algorithm.";
       leaf flood-reduction-algo {
         type iana-igp-flood-algo:igp-flooding-topo-algo;
         description
-          "Specifies the active flooding reduction algorithm
+          "Specifies the active flood reduction algorithm
            in for IS-IS Level 1.
            RFC XXXX: IGP Flooding Reduction Algorithms Framework";
       }
@@ -89,24 +89,24 @@ module ietf-isis-flood-reduction-algo {
         "This augment IS-IS routing protocol when used";
     }
     description
-      "This augments IS-IS with flooding reduction algorithm
+      "This augments IS-IS with flood reduction algorithm
        configuration.";
     container level-1 {
       uses flood-reduction-algo-config;
       description
-        "IS-IS Level-1 Flooding Reduction Algorithm
+        "IS-IS Level-1 Flood Reduction Algorithm
          configuration.";
     }
     container level-2 {
       uses flood-reduction-algo-config;
       description
-        "IS-IS Level-2 Flooding Reduction Algorithm
+        "IS-IS Level-2 Flood Reduction Algorithm
          configuration.";
     }
   }
 
   /*
-   * IS-IS Flooding Reduction Algorithm Router Capabilities
+   * IS-IS Flood Reduction Algorithm Router Capabilities
    */
 
   grouping flood-reduction-algorithm-tlv {
@@ -123,7 +123,7 @@ module ietf-isis-flood-reduction-algo {
       leaf flood-reduction-algo {
         type iana-igp-flood-algo:igp-flooding-topo-algo;
         description
-          "Flooding reduction algorithm active in the
+          "Flood reduction algorithm active in the
            IS-IS routing domain";
         reference
           "RFC 7981: IS-IS Extensions for Advertising Router

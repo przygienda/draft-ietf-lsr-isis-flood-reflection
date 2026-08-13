@@ -31,7 +31,7 @@ module ietf-ospf-flood-reduction-algo {
                <mailto:acee.ietf@gmail.com>";
   description
     "This YANG module defines the operational state for
-     the flooding reduction algorithm  in OSPF as defined
+     the flood reduction algorithm in OSPF as defined
      in RFC XXXX.
 
      Copyright (c) 2026 IETF Trust and the persons identified as
@@ -59,7 +59,7 @@ module ietf-ospf-flood-reduction-algo {
 
   grouping router-flood-reduction-algo-tlv {
     description
-      "Grouping for OSPF router flooding algorithm capabilities
+      "Grouping for OSPF router flood algorithm capabilities
        TLV types.";
     reference
       "RFC 7770: Extensions to OSPF for Advertising Optional
@@ -67,11 +67,11 @@ module ietf-ospf-flood-reduction-algo {
        RFC XXXX: Flooding Reduction Algorithms Framework";
     container router-flood-reduction-algo-tlv {
       description
-        "OSPF Router Flooding Algorithm TLV.";
-      leaf active-flooding-algo {
+        "OSPF Router Flood Algorithm TLV.";
+      leaf active-flood-algo {
         type iana-igp-flood-algo:igp-flooding-topo-algo;
         description
-          "Flooding reduction algorithm active in the
+          "Flood reduction algorithm active in the
            OSPF routing domain
            RFC XXXX: Flooding Reduction Algorithms Framework";
       }
@@ -79,7 +79,7 @@ module ietf-ospf-flood-reduction-algo {
   }
 
   /*
-   * OSPF Flooding Reduciton Algorithm Configuration
+   * OSPF Flood Reduciton Algorithm Configuration
    */
 
   augment "/rt:routing/rt:control-plane-protocols/"
@@ -92,15 +92,15 @@ module ietf-ospf-flood-reduction-algo {
         "This augmentation is only valid for both
          OSPFv2 and OSPFv3";
     }
-    container flooding-reduction-algo {
+    container flood-reduction-algo {
       description
-        "OSPF area level flooding algorithm routing configuration.
+        "OSPF area level flood algorithm routing configuration.
          This containers includes configuration related to the the
          active flooding reduction algorithm.";
-      leaf flooding-reduction-algo {
+      leaf flood-reduction-algo {
         type iana-igp-flood-algo:igp-flooding-topo-algo;
         description
-          "Specifies the active flooding reduction algorithm
+          "Specifies the active flood reduction algorithm
            in the OSPF area.
            RFC XXXX: Flooding Reduction Algorithms Framework";
       }
@@ -111,9 +111,8 @@ module ietf-ospf-flood-reduction-algo {
   }
 
   /*
-   * OSPFv2 Router-Information Opaque LSA Flooding Reduction TLV
+   * OSPFv2 Router-Information Opaque LSA Flood Reduction TLV
    */
-
   augment "/rt:routing/"
         + "rt:control-plane-protocols/rt:control-plane-protocol/"
         + "ospf:ospf/ospf:areas/"
@@ -138,9 +137,8 @@ module ietf-ospf-flood-reduction-algo {
   }
 
   /*
-   * OSPFv3 Router-Information LSA Flooding Reduction TLV
+   * OSPFv3 Router-Information LSA Flood Reduction TLV
    */
-
   augment "/rt:routing/"
         + "rt:control-plane-protocols/rt:control-plane-protocol/"
         + "ospf:ospf/ospf:areas/ospf:area/"
