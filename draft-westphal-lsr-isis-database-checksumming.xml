@@ -428,7 +428,19 @@ module ietf-isis-db-fingerprint {
     pub(crate) fn lsdb_fingerprint_component(&self) -> u64 {
         let mut result: u64 = 0;
         let system_id: &[u8] = self.lsp_id.system_id.as_ref();
-        for i in system_id.iter().chain(&[self.lsp_id.pseudonode]) {
+        // The LSP ID (system ID + pseudonode ID + fragment number)
+        // MUST be folded in full. Omitting the fragment number byte
+        // would make every fragment of a given system/pseudonode
+        // contribute the same value here, leaving the checksum and
+        // length fields below as the only differentiators between
+        // fragments; two fragments whose checksum and length happen
+        // to agree (or whose combined XOR happens to cancel across
+        // the LSDB) would then be indistinguishable to the
+        // fingerprint, silently defeating its purpose.
+        for i in system_id
+            .iter()
+            .chain(&[self.lsp_id.pseudonode, self.lsp_id.fragment])
+        {
             result <<= 8;
             result ^= *i as u64;
         }
