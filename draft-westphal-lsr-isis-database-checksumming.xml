@@ -66,8 +66,9 @@
                 behavior across the network.
             </t>
             <t>
-                LSPs whose remaining lifetime has expired <bcp14>MUST</bcp14> be excluded from
-                the fingerprint calculation.
+                LSPs whose Remaining Lifetime is zero (including purged LSPs being retained
+                for ZeroAgeLifetime <xref target="ISO10589"/>) <bcp14>MUST</bcp14> be excluded
+                from the fingerprint calculation.
             </t>
             <t>
                 A reference checksum algorithm for a fragment is given in <xref target="csum_algo"/>. The overall fingerprint
@@ -85,6 +86,71 @@
                 interpreted as described in BCP 14 <xref target="RFC2119"/>
                 <xref target="RFC8174"/> when, and only when, they appear in all capitals, as
                 shown here.
+            </t>
+        </section>
+
+        <section title="IS-IS Database Fingerprint TLV" anchor="fp_tlv">
+            <t>
+                To allow routers to rapidly detect link-state database synchronization
+                differences directly with neighbors without waiting for or exchanging full
+                CSNPs, this document defines an optional top-level IS-IS TLV: the Database
+                Fingerprint TLV.
+            </t>
+            <t>
+                The Database Fingerprint TLV <bcp14>MAY</bcp14> be included in the following
+                PDU types:
+            </t>
+            <ul>
+                <li>Level 1 LAN IS-to-IS Hello PDU <xref target="ISO10589"/></li>
+                <li>Level 2 LAN IS-to-IS Hello PDU <xref target="ISO10589"/></li>
+                <li>Point-to-Point IS-to-IS Hello PDU <xref target="ISO10589"/></li>
+                <li>Complete Sequence Numbers PDU (CSNP) <xref target="ISO10589"/></li>
+            </ul>
+            <t>
+                The format of the Database Fingerprint TLV is shown in <xref target="fp_tlv_fig"/>.
+            </t>
+
+            <figure anchor="fp_tlv_fig">
+                <name>Database Fingerprint TLV Format</name>
+                <artwork align="left" name="" type="" alt=""><![CDATA[
+ 0                   1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|  Type (TBA)   |  Length (10)  |     Level     |   Reserved    |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                     Database Fingerprint                      |
+|                           (64 bits)                           |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+]]></artwork>
+            </figure>
+
+            <dl newline="false" spacing="normal">
+                <dt>Type:</dt>
+                <dd>TBA (1 octet), to be allocated by IANA from the "IS-IS Top-Level TLV Codepoints" registry.</dd>
+                <dt>Length:</dt>
+                <dd>10 octets.</dd>
+                <dt>Level:</dt>
+                <dd>
+                    1 octet indicating the IS-IS level for the fingerprint: 1 for Level 1,
+                    or 2 for Level 2. Values other than 1 and 2 are reserved and <bcp14>MUST</bcp14>
+                    be ignored on receipt. In LAN Hello PDUs, the Level field <bcp14>MUST</bcp14>
+                    match the level of the LAN Hello PDU. In Point-to-Point Hello PDUs, a router
+                    <bcp14>MAY</bcp14> include up to two instances of this TLV (one for Level 1
+                    and one for Level 2).
+                </dd>
+                <dt>Reserved:</dt>
+                <dd>1 octet. <bcp14>MUST</bcp14> be set to 0 on transmission and ignored on receipt.</dd>
+                <dt>Database Fingerprint:</dt>
+                <dd>64-bit (8 octets) fingerprint for the specified level in network byte order, computed as defined in this document.</dd>
+            </dl>
+
+            <t>
+                When a router receives an IS-IS Hello PDU containing a Database Fingerprint TLV
+                for a given level, it <bcp14>MAY</bcp14> compare the received fingerprint value
+                against its locally computed fingerprint for that level. If the fingerprints
+                match, the link-state databases for that level are verified to be synchronized.
+                If the fingerprints differ, normal IS-IS database synchronization procedures
+                (e.g., CSNP and PSNP exchanges) continue as specified in <xref target="ISO10589"/>.
             </t>
         </section>
 
@@ -198,10 +264,12 @@ module ietf-isis-db-fingerprint {
            level.
 
            The fingerprint is computed by XOR-combining a per-LSP
-           component value for each LSP whose remaining lifetime is
-           non-zero. The per-LSP component value is derived from the
-           LSP identifier, the LSP checksum, and the LSP length, as
-           specified in Appendix A of RFC XXXX.
+           component value for each LSP whose Remaining Lifetime is
+           non-zero. LSPs whose Remaining Lifetime is zero (including
+           purged LSPs retained during ZeroAgeLifetime) MUST be
+           excluded from the calculation. The per-LSP component value
+           is derived from the LSP identifier, the LSP checksum, and
+           the LSP length, as specified in Appendix A of RFC XXXX.
 
            The fingerprint is intended for detecting potential LSDB
            synchronization differences. Different values indicate
@@ -229,31 +297,76 @@ module ietf-isis-db-fingerprint {
 
         </section>
 
+        <section title="Operational Considerations" anchor="operations">
+            <t>
+                The database fingerprint mechanism and the reported elapsed time
+                (<tt>last-update</tt>) are intended to observe general database synchronization
+                and propagation delays across the network in stable state. Measurement of
+                flooding diffusion or synchronization events at sub-second granularity
+                (under 1 second) is not intended by this specification.
+            </t>
+            <t>
+                The database fingerprint mechanism assumes that nodes within the same flooding
+                domain synchronize identical sets of Link State PDUs (LSPs). If LSP flooding
+                is filtered or constrained for any reason (for example, due to policy-based
+                flooding filters, mesh groups, or topology reduction mechanisms), the link-state
+                databases on nodes separated by such filtering will not contain the same set
+                of LSPs.
+            </t>
+            <t>
+                Consequently, the computed fingerprint values will not be the same on both
+                sides of the filtering boundary. Operators and network management systems
+                must take any intentional flooding asymmetry or filtering into account when
+                comparing database fingerprints between nodes, as a mismatch under these
+                conditions does not indicate a protocol failure or synchronization defect.
+            </t>
+        </section>
+
         <section title="IANA Considerations" anchor="iana">
 
-            <t>
-                This document requests the registration of one URI in the "IETF XML Registry"
-                <xref target="RFC3688"/>. Following the format in <xref target="RFC3688"/>, the
-                following registration is requested:
-            </t>
+            <section title="IS-IS Top-Level TLV Codepoints Registry">
+                <t>
+                    This document requests that IANA allocate a new codepoint from the
+                    "IS-IS Top-Level TLV Codepoints" registry:
+                </t>
+                <artwork align="left" name="" type="" alt=""><![CDATA[
+   Value:     TBA
+   Name:      Database Fingerprint
+   IIH:       Y
+   LSP:       N
+   SNP:       Y
+   Purge:     N
+   Reference: RFC XXXX
+]]></artwork>
+            </section>
 
-            <artwork align="left" name="" type="" alt=""><![CDATA[
+            <section title="IETF XML Registry">
+                <t>
+                    This document requests the registration of one URI in the "IETF XML Registry"
+                    <xref target="RFC3688"/>. Following the format in <xref target="RFC3688"/>, the
+                    following registration is requested:
+                </t>
+
+                <artwork align="left" name="" type="" alt=""><![CDATA[
    URI: urn:ietf:params:xml:ns:yang:ietf-isis-db-fingerprint
    Registrant Contact: The IESG.
    XML: N/A, the requested URI is an XML namespace.
 ]]></artwork>
+            </section>
 
-            <t>
-                This document requests the registration of one YANG module in the "YANG Module
-                Names" registry <xref target="RFC6020"/>:
-            </t>
+            <section title="YANG Module Names Registry">
+                <t>
+                    This document requests the registration of one YANG module in the "YANG Module
+                    Names" registry <xref target="RFC6020"/>:
+                </t>
 
-            <artwork align="left" name="" type="" alt=""><![CDATA[
+                <artwork align="left" name="" type="" alt=""><![CDATA[
    Name:      ietf-isis-db-fingerprint
    Namespace: urn:ietf:params:xml:ns:yang:ietf-isis-db-fingerprint
    Prefix:    isis-db-fp
    Reference: RFC XXXX
 ]]></artwork>
+            </section>
 
         </section>
 
@@ -283,6 +396,21 @@ module ietf-isis-db-fingerprint {
             <xi:include href='https://bib.ietf.org/public/rfc/bibxml/reference.RFC.8174.xml'/>
             <xi:include href='https://bib.ietf.org/public/rfc/bibxml/reference.RFC.8349.xml'/>
             <xi:include href='https://bib.ietf.org/public/rfc/bibxml/reference.RFC.9130.xml'/>
+
+            <reference anchor="ISO10589">
+                <front>
+                    <title>Intermediate system to Intermediate system intra-domain
+                        routeing information exchange protocol for use in conjunction with
+                        the protocol for providing the connectionless-mode Network Service
+                        (ISO 8473)
+                    </title>
+                    <author>
+                        <organization abbrev="ISO">International Organization for Standardization</organization>
+                    </author>
+                    <date month="Nov" year="2002"/>
+                </front>
+                <seriesInfo name="ISO/IEC" value="10589:2002, Second Edition"/>
+            </reference>
 
         </references> <!-- end of normative references -->
 
