@@ -41,7 +41,9 @@
                 databases on all routers have synchronized properly and to derive a rough metric
                 of flooding diffusion behavior. This document proposes a lightweight database
                 fingerprinting mechanism for IS-IS along with YANG model extensions providing
-                easy access to such information.
+                easy access to such information. For fast verification against a peer, an
+                optional TLV carrying the database fingerprint is defined for inclusion in
+                IIH and CSNP PDUs.
             </t>
 
         </abstract>
