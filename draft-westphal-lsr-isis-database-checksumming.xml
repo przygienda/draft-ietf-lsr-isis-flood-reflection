@@ -118,11 +118,15 @@
  0                   1                   2                   3
  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|  Type (TBA)   |  Length (10)  |     Level     |   Reserved    |
+|  Type (TBA)   | Length (10/16)|     Level     |   Reserved    |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 |                     Database Fingerprint                      |
 |                           (64 bits)                           |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|           Timestamp of Last Modification (optional, 48 bits)  |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|           (cont.)             |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 ]]></artwork>
             </figure>
 
@@ -130,7 +134,12 @@
                 <dt>Type:</dt>
                 <dd>TBA (1 octet), to be allocated by IANA from the "IS-IS Top-Level TLV Codepoints" registry.</dd>
                 <dt>Length:</dt>
-                <dd>10 octets.</dd>
+                <dd>
+                    10 or 16 octets. The Length field indicates whether the optional timestamp
+                    is present: 10 octets indicates only the Level, Reserved, and Database
+                    Fingerprint fields are present; 16 octets indicates the optional 6-octet
+                    Timestamp of Last Modification is also present.
+                </dd>
                 <dt>Level:</dt>
                 <dd>
                     1 octet indicating the IS-IS level for the fingerprint: 1 for Level 1,
@@ -144,6 +153,17 @@
                 <dd>1 octet. <bcp14>MUST</bcp14> be set to 0 on transmission and ignored on receipt.</dd>
                 <dt>Database Fingerprint:</dt>
                 <dd>64-bit (8 octets) fingerprint for the specified level in network byte order, computed as defined in this document.</dd>
+                <dt>Timestamp of Last Modification:</dt>
+                <dd>
+                    Optional 48-bit (6 octets) field indicating the point in time when the link-state
+                    database at the specified level was last modified. This field <bcp14>MAY</bcp14>
+                    be included when IS-IS packet timestamping <xref target="I-D.many-lsr-isis-packet-timestamping"/>
+                    is supported. When present, the timestamp is encoded in the 48-bit format
+                    specified in <xref target="I-D.many-lsr-isis-packet-timestamping"/> (comprising a
+                    32-bit Seconds field and a 16-bit field containing the high-order epoch bit,
+                    proxy bit, fractional second, and precision). Its presence is indicated by
+                    the TLV Length being set to 16.
+                </dd>
             </dl>
 
             <t>
@@ -419,6 +439,26 @@ module ietf-isis-db-fingerprint {
         <references title="Informative References">
 
             <xi:include href='https://bib.ietf.org/public/rfc/bibxml/reference.RFC.8340.xml'/>
+
+            <reference anchor="I-D.many-lsr-isis-packet-timestamping">
+                <front>
+                    <title>IS-IS Packet Timestamping</title>
+                    <author initials="T." surname="Przygienda" fullname="Tony Przygienda">
+                        <organization>HPE Juniper Networking</organization>
+                    </author>
+                    <author initials="C." surname="Barth" fullname="Colby Barth">
+                        <organization>HPE Juniper Networking</organization>
+                    </author>
+                    <author initials="T." surname="Li" fullname="Tony Li">
+                        <organization>HPE Juniper Networking</organization>
+                    </author>
+                    <author initials="J." surname="Halpern" fullname="Joel Halpern">
+                        <organization>HPE Juniper Networking</organization>
+                    </author>
+                    <date month="October" year="2026"/>
+                </front>
+                <seriesInfo name="Internet-Draft" value="draft-many-lsr-isis-packet-timestamping-00"/>
+            </reference>
 
         </references> <!-- end of informative references -->
 
