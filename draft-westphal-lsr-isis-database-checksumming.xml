@@ -10,7 +10,7 @@
 <?rfc sortrefs="yes" ?>
 <?rfc compact="yes" ?>
 <?rfc subcompact="no" ?>
-<rfc xmlns:xi="http://www.w3.org/2001/XInclude" category="std" docName="draft-westphal-lsr-isis-database-checksumming-01" ipr="trust200902" obsoletes="" updates="" submissionType="IETF" xml:lang="en" tocInclude="true" tocDepth="3" symRefs="true" sortRefs="true" version="3">
+<rfc xmlns:xi="http://www.w3.org/2001/XInclude" category="std" docName="draft-westphal-lsr-isis-database-checksumming-02" ipr="trust200902" obsoletes="" updates="" submissionType="IETF" xml:lang="en" tocInclude="true" tocDepth="3" symRefs="true" sortRefs="true" version="3">
 
     <!-- ***** FRONT MATTER ***** -->
 
@@ -68,13 +68,44 @@
                 behavior across the network.
             </t>
             <t>
-                LSPs whose Remaining Lifetime is zero (including purged LSPs being retained
-                for ZeroAgeLifetime <xref target="ISO10589"/>) <bcp14>MUST</bcp14> be excluded
-                from the fingerprint calculation.
+                The fingerprint includes all LSP fragments held in the level's LSDB,
+                including purged LSPs retained for ZeroAgeLifetime
+                <xref target="ISO10589"/>. For an LSP whose Remaining Lifetime is zero,
+                the checksum and length inputs to its fingerprint component
+                <bcp14>MUST</bcp14> both be treated as zero; the LSP ID and sequence
+                number remain included. A purge contributes to the fingerprint until it
+                is removed from the LSDB. This normalization applies only to fingerprint
+                computation and does not change the LSP's on-wire fields. Local
+                placeholders that do not represent an LSP, such as entries created to
+                request a missing LSP in response to an SNP, <bcp14>MUST NOT</bcp14>
+                contribute to the fingerprint. An actual LSP is not excluded merely
+                because its checksum or length is zero.
             </t>
             <t>
                 A reference checksum algorithm for a fragment is given in <xref target="csum_algo"/>. The overall fingerprint
                 is the XOR of all fragment checksums.
+            </t>
+            <t>
+                The fingerprint <bcp14>MUST</bcp14> be updated when an LSP is added,
+                removed, or changes in a way that changes its contribution. In particular,
+                expiry or purging replaces the previous contribution with the normalized
+                purge contribution; removal after ZeroAgeLifetime removes that contribution.
+                A placeholder becoming an LSP, or an LSP becoming a placeholder, likewise
+                requires the corresponding contribution to be added or removed. Changes to
+                the LSP ID, sequence number, checksum, length, or purge state can affect the
+                contribution, but ordinary remaining lifetime countdown does not.
+            </t>
+            <t>
+                Implementations that maintain the fingerprint incrementally, rather than
+                walking the database, need some care here: by the time such an event is
+                observed, the fields of the LSP have usually already changed, so the value
+                that has to be XORed out is no longer derivable from the LSP. The
+                straightforward implementation caches each LSP's last folded contribution
+                alongside the LSP and, on any change, XORs out the cached value and XORs
+                in the newly computed one, replacing the cache. On removal, only the cached
+                contribution is XORed out. Recomputing the contribution from the changed
+                LSP and XORing that out instead silently corrupts the fingerprint, and the
+                error persists until the next full walk.
             </t>
         </section>
 
@@ -281,12 +312,17 @@ module ietf-isis-db-fingerprint {
            level.
 
            The fingerprint is computed by XOR-combining a per-LSP
-           component value for each LSP whose Remaining Lifetime is
-           non-zero. LSPs whose Remaining Lifetime is zero (including
-           purged LSPs retained during ZeroAgeLifetime) MUST be
-           excluded from the calculation. The per-LSP component value
-           is derived from the LSP identifier, the LSP checksum, and
-           the LSP length, as specified in Appendix A of RFC XXXX.
+           component value for each LSP in the level's LSDB,
+           including purges retained during ZeroAgeLifetime. Local
+           placeholders that do not represent an LSP MUST NOT
+           contribute. For an LSP whose Remaining Lifetime is zero,
+           the checksum and length inputs MUST be treated as zero
+           for this calculation; this does not change the on-wire
+           LSP. An actual LSP is not excluded merely because its
+           checksum or length is zero.
+           The per-LSP component value is derived from the LSP
+           identifier, sequence number, checksum, and length, as
+           specified in Appendix A of RFC XXXX.
 
            The fingerprint is intended for detecting potential LSDB
            synchronization differences. Different values indicate
@@ -321,6 +357,19 @@ module ietf-isis-db-fingerprint {
                 and propagation delays across the network in stable state. Measurement of
                 flooding diffusion or synchronization events at sub-second granularity
                 (under 1 second) is not intended by this specification.
+            </t>
+            <t>
+                A node holding an older copy of an otherwise unchanged LSP has a
+                synchronization difference. The LSP checksum of <xref target="ISO10589"/>
+                is computed from the LSP ID field onwards and therefore already covers
+                the Sequence Number, and the algorithm in <xref target="csum_algo"/>
+                additionally folds the sequence number in explicitly, so that the
+                contribution does not depend on checksum coverage alone. A periodic LSP
+                refresh consequently changes its contribution even when its content is
+                unchanged, although fingerprint collisions remain possible. The reported
+                <tt>last-update</tt> is the time since the fingerprint value last changed,
+                including changes caused by refreshes, and in a large network it will
+                rarely grow large.
             </t>
             <t>
                 The database fingerprint mechanism assumes that nodes within the same flooding
@@ -439,6 +488,13 @@ module ietf-isis-db-fingerprint {
 
         <section title="Checksum Reference Algorithm" anchor="csum_algo">
 
+            <t>
+                The following component algorithm is applied to actual LSDB LSPs, not
+                local placeholders. In this example, <tt>is_purge()</tt> indicates that
+                the LSP's Remaining Lifetime is zero, and <tt>raw.len()</tt> is its PDU
+                length. The checksum and length are normalized only as inputs to this
+                calculation for such an LSP.
+            </t>
             <figure>
                 <artwork align="center" name="" type="" alt=""><![CDATA[
 <CODE BEGINS>
@@ -461,10 +517,13 @@ module ietf-isis-db-fingerprint {
             result <<= 8;
             result ^= *i as u64;
         }
-        // fragment checksum
-        result ^= (self.cksum as u64) << 48;
-        // This is equal to the PDU length advertised by the fragment
-        result ^= (self.raw.len() as u64) << 32;
+        if !self.is_purge() {
+            // Fragment checksum and advertised PDU length.
+            result ^= (self.cksum as u64) << 48;
+            result ^= (self.raw.len() as u64) << 32;
+        }
+        // Fold the sequence number in explicitly, including for purges.
+        result ^= self.seqno as u64;
         result
     }
 <CODE ENDS>
