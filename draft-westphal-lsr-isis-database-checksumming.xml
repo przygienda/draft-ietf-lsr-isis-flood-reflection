@@ -10,7 +10,7 @@
 <?rfc sortrefs="yes" ?>
 <?rfc compact="yes" ?>
 <?rfc subcompact="no" ?>
-<rfc xmlns:xi="http://www.w3.org/2001/XInclude" category="std" docName="draft-westphal-lsr-isis-database-checksumming-02" ipr="trust200902" obsoletes="" updates="" submissionType="IETF" xml:lang="en" tocInclude="true" tocDepth="3" symRefs="true" sortRefs="true" version="3">
+<rfc xmlns:xi="http://www.w3.org/2001/XInclude" category="std" docName="draft-westphal-lsr-isis-database-checksumming-03" ipr="trust200902" obsoletes="" updates="" submissionType="IETF" xml:lang="en" tocInclude="true" tocDepth="3" symRefs="true" sortRefs="true" version="3">
 
     <!-- ***** FRONT MATTER ***** -->
 
@@ -186,7 +186,7 @@
                 <dd>
                     Optional 32-bit (4 octets) unsigned integer in network byte order indicating
                     the time elapsed, in seconds, since the fingerprint value for this level's
-                    LSDB was last changed. This provides the in-band equivalent of the YANG
+                    LSDB was last changed for any reason. This provides the in-band equivalent of the YANG
                     <tt>last-update</tt> leaf. Its presence is indicated by the TLV Length being
                     set to 14.
                 </dd>
@@ -196,9 +196,12 @@
                 When a router receives an IS-IS Hello PDU containing a Database Fingerprint TLV
                 for a given level, it <bcp14>MAY</bcp14> compare the received fingerprint value
                 against its locally computed fingerprint for that level. If the fingerprints
-                match, the link-state databases for that level are verified to be synchronized.
+                match, the link-state databases for that level can be considered as synchronized
+                for operational purposes but
+                the match SHOULD NOT be used to shortcut any of the normal IS-IS synchronization
+                procedures.
                 If the fingerprints differ, normal IS-IS database synchronization procedures
-                (e.g., CSNP and PSNP exchanges) continue as specified in <xref target="ISO10589"/>.
+                (e.g., CSNP and PSNP exchanges) MUST continue to apply as specified in <xref target="ISO10589"/>.
             </t>
         </section>
 
@@ -368,7 +371,7 @@ module ietf-isis-db-fingerprint {
                 refresh consequently changes its contribution even when its content is
                 unchanged, although fingerprint collisions remain possible. The reported
                 <tt>last-update</tt> is the time since the fingerprint value last changed,
-                including changes caused by refreshes, and in a large network it will
+                including changes caused by refreshes or purges, and in a large network it will
                 rarely grow large.
             </t>
             <t>

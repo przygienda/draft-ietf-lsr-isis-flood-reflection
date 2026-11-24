@@ -5,13 +5,13 @@
 Network Working Group                                           R. White
 Internet-Draft                                                     Nokia
 Intended status: Standards Track                                S. Hegde
-Expires: 31 January 2027                                   T. Przygienda
+Expires: 28 May 2027                                       T. Przygienda
                                                         Juniper Networks
                                                                 L. Jalil
                                                                  Verizon
                                                                 D. Voyer
                                                                    Cisco
-                                                            30 July 2026
+                                                        24 November 2026
 
 
                   IS-IS Distributed Flooding Reduction
@@ -53,12 +53,12 @@ Status of This Memo
 
 
 
-White, et al.            Expires 31 January 2027                [Page 1]
+White, et al.              Expires 28 May 2027                  [Page 1]
 
-Internet-Draft    IS-IS Distributed Flooding Reduction         July 2026
+Internet-Draft    IS-IS Distributed Flooding Reduction     November 2026
 
 
-   This Internet-Draft will expire on 31 January 2027.
+   This Internet-Draft will expire on 28 May 2027.
 
 Copyright Notice
 
@@ -109,9 +109,9 @@ Table of Contents
 
 
 
-White, et al.            Expires 31 January 2027                [Page 2]
+White, et al.              Expires 28 May 2027                  [Page 2]
 
-Internet-Draft    IS-IS Distributed Flooding Reduction         July 2026
+Internet-Draft    IS-IS Distributed Flooding Reduction     November 2026
 
 
 1.1.  Empirical Evidence of Correctness and Efficiency Improvement
@@ -165,9 +165,9 @@ Internet-Draft    IS-IS Distributed Flooding Reduction         July 2026
 
 
 
-White, et al.            Expires 31 January 2027                [Page 3]
+White, et al.              Expires 28 May 2027                  [Page 3]
 
-Internet-Draft    IS-IS Distributed Flooding Reduction         July 2026
+Internet-Draft    IS-IS Distributed Flooding Reduction     November 2026
 
 
    +====+ +====+ +====+ +====+ +====+ +====+
@@ -221,9 +221,9 @@ Internet-Draft    IS-IS Distributed Flooding Reduction         July 2026
 
 
 
-White, et al.            Expires 31 January 2027                [Page 4]
+White, et al.              Expires 28 May 2027                  [Page 4]
 
-Internet-Draft    IS-IS Distributed Flooding Reduction         July 2026
+Internet-Draft    IS-IS Distributed Flooding Reduction     November 2026
 
 
    *  Stage 1: Forward Optimization
@@ -277,9 +277,9 @@ Internet-Draft    IS-IS Distributed Flooding Reduction         July 2026
 
 
 
-White, et al.            Expires 31 January 2027                [Page 5]
+White, et al.              Expires 28 May 2027                  [Page 5]
 
-Internet-Draft    IS-IS Distributed Flooding Reduction         July 2026
+Internet-Draft    IS-IS Distributed Flooding Reduction     November 2026
 
 
    using both a view of the network shared by all nodes (based on the
@@ -333,9 +333,9 @@ Internet-Draft    IS-IS Distributed Flooding Reduction         July 2026
 
 
 
-White, et al.            Expires 31 January 2027                [Page 6]
+White, et al.              Expires 28 May 2027                  [Page 6]
 
-Internet-Draft    IS-IS Distributed Flooding Reduction         July 2026
+Internet-Draft    IS-IS Distributed Flooding Reduction     November 2026
 
 
        i.    If the IS is the LSP originator, skip
@@ -389,9 +389,9 @@ Internet-Draft    IS-IS Distributed Flooding Reduction         July 2026
 
 
 
-White, et al.            Expires 31 January 2027                [Page 7]
+White, et al.              Expires 28 May 2027                  [Page 7]
 
-Internet-Draft    IS-IS Distributed Flooding Reduction         July 2026
+Internet-Draft    IS-IS Distributed Flooding Reduction     November 2026
 
 
    C)  If this member of the RNL signals capability to run or is running
@@ -445,9 +445,9 @@ Internet-Draft    IS-IS Distributed Flooding Reduction         July 2026
 
 
 
-White, et al.            Expires 31 January 2027                [Page 8]
+White, et al.              Expires 28 May 2027                  [Page 8]
 
-Internet-Draft    IS-IS Distributed Flooding Reduction         July 2026
+Internet-Draft    IS-IS Distributed Flooding Reduction     November 2026
 
 
    If any such re-synchronizations above a configurable threshold is
@@ -501,9 +501,9 @@ Internet-Draft    IS-IS Distributed Flooding Reduction         July 2026
 
 
 
-White, et al.            Expires 31 January 2027                [Page 9]
+White, et al.              Expires 28 May 2027                  [Page 9]
 
-Internet-Draft    IS-IS Distributed Flooding Reduction         July 2026
+Internet-Draft    IS-IS Distributed Flooding Reduction     November 2026
 
 
 2.  Operational Considerations
@@ -557,9 +557,9 @@ Internet-Draft    IS-IS Distributed Flooding Reduction         July 2026
 
 
 
-White, et al.            Expires 31 January 2027               [Page 10]
+White, et al.              Expires 28 May 2027                 [Page 10]
 
-Internet-Draft    IS-IS Distributed Flooding Reduction         July 2026
+Internet-Draft    IS-IS Distributed Flooding Reduction     November 2026
 
 
    [RFC5304]  Li, T. and R. Atkinson, "IS-IS Cryptographic
@@ -613,9 +613,9 @@ Authors' Addresses
 
 
 
-White, et al.            Expires 31 January 2027               [Page 11]
+White, et al.              Expires 28 May 2027                 [Page 11]
 
-Internet-Draft    IS-IS Distributed Flooding Reduction         July 2026
+Internet-Draft    IS-IS Distributed Flooding Reduction     November 2026
 
 
    Shraddha Hegde
@@ -669,4 +669,4 @@ Internet-Draft    IS-IS Distributed Flooding Reduction         July 2026
 
 
 
-White, et al.            Expires 31 January 2027               [Page 12]
+White, et al.              Expires 28 May 2027                 [Page 12]
